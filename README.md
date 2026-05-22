@@ -127,7 +127,11 @@ http://readsb.local/tar1090/data/aircraft.json
 | `showTrails` | `true` | Leave short position trails behind aircraft. |
 | `trailMaxPoints` | `4` | Number of previous position dots retained per aircraft. |
 | `trailMaxAgeMs` | `90000` | Maximum age of aircraft trail dots. |
-| `showLeaderLines` | `true` | Show small ATC-style leader lines between aircraft and labels. |
+| `showLeaderLines` | `true` | Legacy switch for heading vectors. Set to `false` to hide them. |
+| `showHeadingVectors` | `true` | Show ATC-style heading vectors from each aircraft target. |
+| `headingVectorMinPx` | `10` | Minimum heading-vector length in pixels. |
+| `headingVectorMaxPx` | `46` | Maximum heading-vector length in pixels. |
+| `headingVectorKtPerPixel` | `12` | Speed scaling for heading vectors. Lower numbers make longer vectors. |
 | `showAirports` | `true` | Show configured airport markers on the radar scope. |
 | `airports` | `[]` | Airports to plot as `{ code, name, lat, lon }`. |
 | `demoMode` | `"auto"` | `true` forces demo, `false` forces live, `"auto"` demos only when `receiverUrl` is blank. |

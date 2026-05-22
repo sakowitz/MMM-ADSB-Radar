@@ -33,20 +33,24 @@ Module.register("MMM-ADSB-Radar", {
     trailMaxPoints: 4,
     trailMaxAgeMs: 90000,
     showLeaderLines: true,
+    showHeadingVectors: true,
+    headingVectorMinPx: 10,
+    headingVectorMaxPx: 46,
+    headingVectorKtPerPixel: 12,
     showAirports: true,
     airports: [],
     demoMode: "auto",
     units: "imperial",
     colors: {
-      scope: "#061815",
-      ring: "rgba(125, 255, 210, 0.26)",
-      sweep: "rgba(86, 255, 190, 0.28)",
-      aircraft: "#78ffd6",
+      scope: "#061408",
+      ring: "rgba(134, 255, 118, 0.26)",
+      sweep: "rgba(96, 255, 96, 0.24)",
+      aircraft: "#7dff72",
       aircraftStale: "#ffcf70",
       airport: "#a5aaa8",
-      text: "#d9fff6",
-      muted: "#8fbfb4",
-      accent: "#ffe07a"
+      text: "#ddffd8",
+      muted: "#96bd91",
+      accent: "#cfff7a"
     }
   },
 
@@ -387,18 +391,19 @@ Module.register("MMM-ADSB-Radar", {
     marker.style.transform = "translate(-50%, -50%)";
     marker.title = this.aircraftTitle(plane);
 
+    if (this.config.showLeaderLines && this.config.showHeadingVectors) {
+      const vector = document.createElement("div");
+      vector.className = "adsb-heading-vector";
+      vector.style.width = `${this.headingVectorLength(plane)}px`;
+      vector.style.transform = `rotate(${heading - 90}deg)`;
+      marker.appendChild(vector);
+    }
+
     const icon = document.createElement("div");
     icon.className = "adsb-aircraft-icon";
-    icon.style.transform = `rotate(${heading}deg)`;
     marker.appendChild(icon);
 
     if (this.config.showLabels) {
-      if (this.config.showLeaderLines) {
-        const leader = document.createElement("div");
-        leader.className = "adsb-label-leader";
-        marker.appendChild(leader);
-      }
-
       const label = document.createElement("div");
       label.className = "adsb-aircraft-label";
       this.aircraftLabelLines(plane).forEach((line, index) => {
@@ -479,6 +484,14 @@ Module.register("MMM-ADSB-Radar", {
     return String(this.config.listMaxHeight);
   },
 
+  headingVectorLength: function (plane) {
+    const min = Number(this.config.headingVectorMinPx) || 10;
+    const max = Number(this.config.headingVectorMaxPx) || 46;
+    const ktPerPixel = Number(this.config.headingVectorKtPerPixel) || 12;
+    const speed = typeof plane.speedKt === "number" ? plane.speedKt : 0;
+    return Math.max(min, Math.min(max, speed / ktPerPixel));
+  },
+
   pointOnScope: function (plane) {
     if (typeof plane.bearing !== "number" || typeof plane.distanceNm !== "number") {
       return null;
@@ -523,10 +536,7 @@ Module.register("MMM-ADSB-Radar", {
   },
 
   aircraftLabelLines: function (plane) {
-    return [
-      plane.flight || plane.hex || "UNKNOWN",
-      plane.aircraftType || "TYPE --"
-    ];
+    return [plane.flight || plane.hex || "UNKNOWN"];
   },
 
   aircraftTitle: function (plane) {

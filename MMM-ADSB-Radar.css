@@ -180,8 +180,10 @@
 .adsb-aircraft {
   color: var(--adsb-plane);
   font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  height: 0;
   position: absolute;
   transform-origin: center;
+  width: 0;
   z-index: 3;
 }
 
@@ -195,25 +197,29 @@
 }
 
 .adsb-aircraft-icon {
-  border-bottom: 11px solid currentColor;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
-  height: 0;
-  margin: 0 auto;
-  transform-origin: 50% 60%;
-  width: 0;
+  background: transparent;
+  border: 1.5px solid currentColor;
+  box-shadow: 0 0 4px color-mix(in srgb, currentColor, transparent 54%);
+  box-sizing: border-box;
+  height: 8px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  z-index: 2;
 }
 
-.adsb-label-leader {
-  background: color-mix(in srgb, currentColor, transparent 42%);
+.adsb-heading-vector {
+  background: currentColor;
+  box-shadow: 0 0 4px color-mix(in srgb, currentColor, transparent 62%);
   height: 1px;
-  left: 8px;
-  opacity: 0.74;
+  left: 0;
+  opacity: 0.78;
   position: absolute;
-  top: 1px;
-  transform: rotate(-18deg);
+  top: 0;
   transform-origin: left center;
-  width: 18px;
+  z-index: 1;
 }
 
 .adsb-aircraft-label {
@@ -238,13 +244,6 @@
   margin-top: 1px;
 }
 
-.adsb-aircraft--label-left .adsb-label-leader {
-  left: auto;
-  right: 8px;
-  transform: rotate(198deg);
-  transform-origin: right center;
-}
-
 .adsb-aircraft--label-left .adsb-aircraft-label {
   left: auto;
   right: 27px;
@@ -253,15 +252,6 @@
 
 .adsb-aircraft--label-low .adsb-aircraft-label {
   top: 9px;
-}
-
-.adsb-aircraft--label-low .adsb-label-leader {
-  top: 9px;
-  transform: rotate(18deg);
-}
-
-.adsb-aircraft--label-left.adsb-aircraft--label-low .adsb-label-leader {
-  transform: rotate(162deg);
 }
 
 .adsb-empty {
