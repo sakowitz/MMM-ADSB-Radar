@@ -1,0 +1,240 @@
+.mmm-adsb-radar {
+  color: var(--adsb-text);
+  font-family: "Roboto Condensed", "Helvetica Neue", Arial, sans-serif;
+  width: min(var(--adsb-size), 92vw);
+}
+
+.adsb-topbar {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.adsb-status {
+  color: var(--adsb-text);
+  font-size: 17px;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.adsb-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.adsb-stat {
+  border: 1px solid color-mix(in srgb, var(--adsb-ring), transparent 28%);
+  border-radius: 4px;
+  padding: 3px 6px;
+  text-align: right;
+}
+
+.adsb-stat-value {
+  color: var(--adsb-accent);
+  display: block;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.adsb-stat-label {
+  color: var(--adsb-muted);
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.adsb-message {
+  border: 1px solid color-mix(in srgb, var(--adsb-plane-stale), transparent 35%);
+  border-radius: 4px;
+  color: var(--adsb-plane-stale);
+  font-size: 13px;
+  line-height: 1.25;
+  margin-bottom: 10px;
+  padding: 7px 8px;
+}
+
+.adsb-scope {
+  aspect-ratio: 1;
+  background:
+    linear-gradient(90deg, transparent calc(50% - 0.5px), var(--adsb-ring) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(0deg, transparent calc(50% - 0.5px), var(--adsb-ring) 50%, transparent calc(50% + 0.5px)),
+    repeating-radial-gradient(circle at center, transparent 0, transparent 19.5%, var(--adsb-ring) 20%, transparent 20.5%),
+    radial-gradient(circle at center, color-mix(in srgb, var(--adsb-scope), white 8%) 0, var(--adsb-scope) 70%);
+  border: 1px solid var(--adsb-ring);
+  border-radius: 50%;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--adsb-ring), transparent 72%);
+  overflow: hidden;
+  position: relative;
+  width: min(var(--adsb-size), 92vw);
+}
+
+.adsb-sweep {
+  animation: adsbSweep 4.8s linear infinite;
+  background: conic-gradient(from 0deg, transparent 0deg, var(--adsb-sweep) 24deg, transparent 42deg, transparent 360deg);
+  inset: 0;
+  position: absolute;
+  transform-origin: 50% 50%;
+}
+
+.adsb-crosshair {
+  border: 1px solid color-mix(in srgb, var(--adsb-ring), transparent 18%);
+  border-radius: 50%;
+  inset: 7%;
+  pointer-events: none;
+  position: absolute;
+}
+
+.adsb-ownship {
+  background: var(--adsb-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--adsb-accent);
+  height: 7px;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 7px;
+}
+
+.adsb-trail {
+  background: var(--adsb-plane);
+  border-radius: 50%;
+  height: 4px;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 4px;
+}
+
+.adsb-aircraft {
+  color: var(--adsb-plane);
+  position: absolute;
+  transform-origin: center;
+  z-index: 3;
+}
+
+.adsb-aircraft--stale {
+  color: var(--adsb-plane-stale);
+}
+
+.adsb-aircraft--emergency {
+  color: #ff6b6b;
+  filter: drop-shadow(0 0 7px rgba(255, 80, 80, 0.85));
+}
+
+.adsb-aircraft-icon {
+  border-bottom: 11px solid currentColor;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  height: 0;
+  margin: 0 auto;
+  width: 0;
+}
+
+.adsb-aircraft-label {
+  background: color-mix(in srgb, var(--adsb-scope), black 18%);
+  border: 1px solid color-mix(in srgb, currentColor, transparent 30%);
+  border-radius: 3px;
+  color: currentColor;
+  font-size: 10px;
+  left: 9px;
+  line-height: 1.1;
+  max-width: 96px;
+  overflow: hidden;
+  padding: 2px 4px;
+  position: absolute;
+  text-overflow: ellipsis;
+  top: 7px;
+  transform: rotate(var(--label-rotation, 0deg));
+  white-space: nowrap;
+}
+
+.adsb-empty {
+  color: var(--adsb-muted);
+  font-size: 15px;
+  left: 50%;
+  position: absolute;
+  text-align: center;
+  text-transform: uppercase;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 70%;
+}
+
+.adsb-list {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.adsb-row,
+.adsb-list-empty {
+  border-top: 1px solid color-mix(in srgb, var(--adsb-ring), transparent 60%);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(70px, 0.9fr) minmax(120px, 1.4fr);
+  min-height: 28px;
+  padding-top: 5px;
+}
+
+.adsb-list-empty {
+  color: var(--adsb-muted);
+  display: block;
+  font-size: 14px;
+}
+
+.adsb-row--emergency {
+  color: #ff6b6b;
+}
+
+.adsb-row-callsign {
+  color: var(--adsb-text);
+  font-size: 15px;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adsb-row-details {
+  color: var(--adsb-muted);
+  font-size: 13px;
+  line-height: 1.25;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mmm-adsb-radar--radar .adsb-topbar {
+  margin-bottom: 8px;
+}
+
+.mmm-adsb-radar--list {
+  width: min(430px, 92vw);
+}
+
+@keyframes adsbSweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 420px) {
+  .adsb-topbar {
+    display: grid;
+  }
+
+  .adsb-stats {
+    justify-content: flex-start;
+  }
+
+  .adsb-row {
+    grid-template-columns: minmax(58px, 0.8fr) minmax(110px, 1.5fr);
+  }
+}
