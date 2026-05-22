@@ -41,7 +41,13 @@ Then add the module to `MagicMirror/config/config.js`.
     centerLon: -122.3321,
     rangeNm: 35,
     demoMode: false,
-    mode: "hybrid"
+    mode: "hybrid",
+    airports: [
+      { code: "KSMF", name: "Sacramento Intl", lat: 38.6954, lon: -121.5908 },
+      { code: "KSAC", name: "Sacramento Exec", lat: 38.5129, lon: -121.4933 },
+      { code: "KMHR", name: "Mather", lat: 38.5553, lon: -121.2972 },
+      { code: "KMCC", name: "McClellan", lat: 38.6676, lon: -121.4006 }
+    ]
   }
 }
 ```
@@ -116,7 +122,14 @@ http://readsb.local/tar1090/data/aircraft.json
 | `showLabels` | `true` | Show callsign and distance labels on the scope. |
 | `showStats` | `true` | Show aircraft count, range, and update time. |
 | `showList` | `true` | Show the nearby aircraft list in hybrid mode. |
+| `listWidth` | `220` | Width of the side list in pixels. |
+| `listMaxHeight` | `null` | Maximum side-list height. Defaults to the radar diameter. Extra rows are hidden behind a bottom fade. |
 | `showTrails` | `true` | Leave short position trails behind aircraft. |
+| `trailMaxPoints` | `4` | Number of previous position dots retained per aircraft. |
+| `trailMaxAgeMs` | `90000` | Maximum age of aircraft trail dots. |
+| `showLeaderLines` | `true` | Show small ATC-style leader lines between aircraft and labels. |
+| `showAirports` | `true` | Show configured airport markers on the radar scope. |
+| `airports` | `[]` | Airports to plot as `{ code, name, lat, lon }`. |
 | `demoMode` | `"auto"` | `true` forces demo, `false` forces live, `"auto"` demos only when `receiverUrl` is blank. |
 | `units` | `"imperial"` | Use `"metric"` for km, meters, and km/h. |
 | `minAltitudeFt` / `maxAltitudeFt` | `null` | Optional altitude filters. |
@@ -128,6 +141,7 @@ http://readsb.local/tar1090/data/aircraft.json
 - No npm package install is required.
 - Demo mode picks a neutral default center if you do not set one.
 - A Pi 3 can read and feed ADS-B data, but running MagicMirror and Pi24 on the same board may feel tight. If your mirror is on another device, point `receiverUrl` at the Pi24 receiver across your LAN.
+- Airport markers are intentionally manual for now, so you can keep the scope uncluttered.
 
 ## Next Ideas
 

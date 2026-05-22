@@ -4,6 +4,16 @@
   width: min(var(--adsb-size), 92vw);
 }
 
+.mmm-adsb-radar--hybrid {
+  width: min(calc(var(--adsb-size) + var(--adsb-list-width) + 16px), 96vw);
+}
+
+.adsb-body {
+  align-items: stretch;
+  display: flex;
+  gap: 16px;
+}
+
 .adsb-topbar {
   align-items: flex-start;
   display: flex;
@@ -71,6 +81,7 @@
   box-shadow: 0 0 18px color-mix(in srgb, var(--adsb-ring), transparent 72%);
   overflow: hidden;
   position: relative;
+  flex: 0 0 auto;
   width: min(var(--adsb-size), 92vw);
 }
 
@@ -100,19 +111,75 @@
   top: 50%;
   transform: translate(-50%, -50%);
   width: 7px;
+  z-index: 2;
+}
+
+.adsb-airport {
+  color: var(--adsb-airport);
+  font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  opacity: 0.46;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
+.adsb-airport-symbol {
+  height: 11px;
+  position: relative;
+  width: 11px;
+}
+
+.adsb-airport-symbol::before,
+.adsb-airport-symbol::after {
+  background: currentColor;
+  content: "";
+  left: 50%;
+  opacity: 0.72;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.adsb-airport-symbol::before {
+  height: 1px;
+  width: 11px;
+}
+
+.adsb-airport-symbol::after {
+  height: 11px;
+  width: 1px;
+}
+
+.adsb-airport-label {
+  color: currentColor;
+  font-size: 10px;
+  font-weight: 500;
+  left: 12px;
+  line-height: 1;
+  position: absolute;
+  top: -1px;
+  white-space: nowrap;
+}
+
+.adsb-airport--label-left .adsb-airport-label {
+  left: auto;
+  right: 12px;
 }
 
 .adsb-trail {
   background: var(--adsb-plane);
   border-radius: 50%;
-  height: 4px;
+  box-shadow: 0 0 4px color-mix(in srgb, var(--adsb-plane), transparent 62%);
+  height: 3px;
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 4px;
+  width: 3px;
+  z-index: 2;
 }
 
 .adsb-aircraft {
   color: var(--adsb-plane);
+  font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
   position: absolute;
   transform-origin: center;
   z-index: 3;
@@ -133,25 +200,68 @@
   border-right: 5px solid transparent;
   height: 0;
   margin: 0 auto;
+  transform-origin: 50% 60%;
   width: 0;
 }
 
+.adsb-label-leader {
+  background: color-mix(in srgb, currentColor, transparent 42%);
+  height: 1px;
+  left: 8px;
+  opacity: 0.74;
+  position: absolute;
+  top: 1px;
+  transform: rotate(-18deg);
+  transform-origin: left center;
+  width: 18px;
+}
+
 .adsb-aircraft-label {
-  background: color-mix(in srgb, var(--adsb-scope), black 18%);
-  border: 1px solid color-mix(in srgb, currentColor, transparent 30%);
-  border-radius: 3px;
-  color: currentColor;
-  font-size: 10px;
-  left: 9px;
-  line-height: 1.1;
-  max-width: 96px;
+  background: transparent;
+  color: color-mix(in srgb, currentColor, white 12%);
+  font-size: 11px;
+  font-weight: 500;
+  left: 27px;
+  line-height: 1.05;
+  max-width: 84px;
   overflow: hidden;
-  padding: 2px 4px;
   position: absolute;
   text-overflow: ellipsis;
-  top: 7px;
-  transform: rotate(var(--label-rotation, 0deg));
+  text-shadow: 0 0 4px color-mix(in srgb, var(--adsb-scope), black 65%);
+  top: -10px;
   white-space: nowrap;
+}
+
+.adsb-aircraft-label-secondary {
+  color: color-mix(in srgb, currentColor, transparent 22%);
+  font-size: 9px;
+  margin-top: 1px;
+}
+
+.adsb-aircraft--label-left .adsb-label-leader {
+  left: auto;
+  right: 8px;
+  transform: rotate(198deg);
+  transform-origin: right center;
+}
+
+.adsb-aircraft--label-left .adsb-aircraft-label {
+  left: auto;
+  right: 27px;
+  text-align: right;
+}
+
+.adsb-aircraft--label-low .adsb-aircraft-label {
+  top: 9px;
+}
+
+.adsb-aircraft--label-low .adsb-label-leader {
+  top: 9px;
+  transform: rotate(18deg);
+}
+
+.adsb-aircraft--label-left.adsb-aircraft--label-low .adsb-label-leader {
+  transform: rotate(162deg);
 }
 
 .adsb-empty {
@@ -167,25 +277,44 @@
 }
 
 .adsb-list {
-  display: grid;
-  gap: 5px;
-  margin-top: 10px;
+  flex: 0 0 var(--adsb-list-width);
+  max-height: var(--adsb-list-max-height);
+  min-height: var(--adsb-list-max-height);
+  margin-top: 0;
+  overflow: hidden;
+  position: relative;
+  width: var(--adsb-list-width);
 }
 
-.adsb-row,
-.adsb-list-empty {
+.adsb-list::after {
+  background: linear-gradient(to bottom, transparent, var(--adsb-scope) 86%);
+  bottom: 0;
+  content: "";
+  height: 42px;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.adsb-row {
   border-top: 1px solid color-mix(in srgb, var(--adsb-ring), transparent 60%);
   display: grid;
-  gap: 8px;
-  grid-template-columns: minmax(70px, 0.9fr) minmax(120px, 1.4fr);
-  min-height: 28px;
-  padding-top: 5px;
+  gap: 2px 8px;
+  grid-template-areas:
+    "callsign type"
+    "details details";
+  grid-template-columns: minmax(72px, 1fr) minmax(38px, auto);
+  min-height: 36px;
+  padding: 5px 0 4px;
 }
 
-.adsb-list-empty {
+.adsb-row--empty {
+  align-items: center;
   color: var(--adsb-muted);
-  display: block;
-  font-size: 14px;
+  display: flex;
+  font-size: 13px;
+  opacity: 0.45;
 }
 
 .adsb-row--emergency {
@@ -194,19 +323,33 @@
 
 .adsb-row-callsign {
   color: var(--adsb-text);
-  font-size: 15px;
-  line-height: 1.15;
+  font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: 13px;
+  grid-area: callsign;
+  line-height: 1.05;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.adsb-row-type {
+  color: var(--adsb-plane);
+  font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  grid-area: type;
+  line-height: 1.05;
+  overflow: hidden;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .adsb-row-details {
   color: var(--adsb-muted);
-  font-size: 13px;
-  line-height: 1.25;
+  font-size: 11px;
+  grid-area: details;
+  line-height: 1.1;
   overflow: hidden;
-  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -235,6 +378,22 @@
   }
 
   .adsb-row {
-    grid-template-columns: minmax(58px, 0.8fr) minmax(110px, 1.5fr);
+    grid-template-columns: minmax(58px, 1fr) minmax(34px, auto);
+  }
+}
+
+@media (max-width: 720px) {
+  .mmm-adsb-radar--hybrid {
+    width: min(var(--adsb-size), 92vw);
+  }
+
+  .adsb-body {
+    display: grid;
+    gap: 10px;
+  }
+
+  .adsb-list {
+    max-height: 220px;
+    width: min(var(--adsb-size), 92vw);
   }
 }

@@ -27,7 +27,14 @@ Module.register("MMM-ADSB-Radar", {
     showLabels: true,
     showStats: true,
     showList: true,
+    listWidth: 220,
+    listMaxHeight: null,
     showTrails: true,
+    trailMaxPoints: 4,
+    trailMaxAgeMs: 90000,
+    showLeaderLines: true,
+    showAirports: true,
+    airports: [],
     demoMode: "auto",
     units: "imperial",
     colors: {
@@ -36,8 +43,9 @@ Module.register("MMM-ADSB-Radar", {
       sweep: "rgba(86, 255, 190, 0.28)",
       aircraft: "#78ffd6",
       aircraftStale: "#ffcf70",
+      airport: "#a5aaa8",
       text: "#d9fff6",
-      muted: "#86b8ab",
+      muted: "#8fbfb4",
       accent: "#ffe07a"
     }
   },
@@ -150,13 +158,13 @@ Module.register("MMM-ADSB-Radar", {
       });
 
       this.trails[key] = this.trails[key]
-        .filter((point) => now - point.timestamp < 180000)
-        .slice(-7);
+        .filter((point) => now - point.timestamp < this.config.trailMaxAgeMs)
+        .slice(-this.config.trailMaxPoints);
     });
 
     Object.keys(this.trails).forEach((key) => {
       if (!activeKeys[key]) {
-        this.trails[key] = this.trails[key].filter((point) => now - point.timestamp < 90000);
+        this.trails[key] = this.trails[key].filter((point) => now - point.timestamp < this.config.trailMaxAgeMs / 2);
       }
 
       if (this.trails[key].length === 0) {
@@ -176,12 +184,19 @@ Module.register("MMM-ADSB-Radar", {
       wrapper.appendChild(this.buildMessage(this.error));
     }
 
+    const body = document.createElement("div");
+    body.className = "adsb-body";
+
     if (this.config.mode !== "list") {
-      wrapper.appendChild(this.buildRadar());
+      body.appendChild(this.buildRadar());
     }
 
     if (this.config.mode !== "radar" && this.config.showList) {
-      wrapper.appendChild(this.buildAircraftList());
+      body.appendChild(this.buildAircraftList());
+    }
+
+    if (body.childNodes.length > 0) {
+      wrapper.appendChild(body);
     }
 
     return wrapper;
@@ -194,10 +209,13 @@ Module.register("MMM-ADSB-Radar", {
     element.style.setProperty("--adsb-sweep", colors.sweep || this.defaults.colors.sweep);
     element.style.setProperty("--adsb-plane", colors.aircraft || this.defaults.colors.aircraft);
     element.style.setProperty("--adsb-plane-stale", colors.aircraftStale || this.defaults.colors.aircraftStale);
+    element.style.setProperty("--adsb-airport", colors.airport || this.defaults.colors.airport);
     element.style.setProperty("--adsb-text", colors.text || this.defaults.colors.text);
     element.style.setProperty("--adsb-muted", colors.muted || this.defaults.colors.muted);
     element.style.setProperty("--adsb-accent", colors.accent || this.defaults.colors.accent);
     element.style.setProperty("--adsb-size", `${this.config.radarSize}px`);
+    element.style.setProperty("--adsb-list-width", `${Number(this.config.listWidth) || this.defaults.listWidth}px`);
+    element.style.setProperty("--adsb-list-max-height", this.listMaxHeight());
   },
 
   buildTopBar: function () {
@@ -249,14 +267,20 @@ Module.register("MMM-ADSB-Radar", {
     ownship.className = "adsb-ownship";
     scope.appendChild(ownship);
 
+    this.prepareAirports().forEach((airport) => {
+      scope.appendChild(this.buildAirportMarker(airport));
+    });
+
     Object.keys(this.trails).forEach((key) => {
-      this.trails[key].forEach((point, index) => {
+      const points = this.trails[key].slice(0, -1);
+
+      points.forEach((point, index) => {
         const trail = document.createElement("div");
         const position = this.pointOnScope(point);
         trail.className = "adsb-trail";
         trail.style.left = `${position.x}%`;
         trail.style.top = `${position.y}%`;
-        trail.style.opacity = `${(index + 1) / (this.trails[key].length + 1)}`;
+        trail.style.opacity = `${0.1 + (index + 1) / (points.length + 1) * 0.24}`;
         scope.appendChild(trail);
       });
     });
@@ -278,6 +302,68 @@ Module.register("MMM-ADSB-Radar", {
     return scope;
   },
 
+  prepareAirports: function () {
+    if (!this.config.showAirports || !Array.isArray(this.config.airports)) {
+      return [];
+    }
+
+    const centerLat = Number(this.config.centerLat);
+    const centerLon = Number(this.config.centerLon);
+
+    if (!Number.isFinite(centerLat) || !Number.isFinite(centerLon)) {
+      return [];
+    }
+
+    return this.config.airports
+      .map((airport) => {
+        const lat = Number(airport.lat);
+        const lon = Number(airport.lon);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+          return null;
+        }
+
+        const distanceNm = this.distanceNm(centerLat, centerLon, lat, lon);
+
+        return {
+          code: airport.code || airport.ident || airport.name || "",
+          name: airport.name || airport.code || airport.ident || "",
+          lat,
+          lon,
+          distanceNm,
+          bearing: this.bearing(centerLat, centerLon, lat, lon)
+        };
+      })
+      .filter((airport) => airport && airport.distanceNm <= this.config.rangeNm);
+  },
+
+  buildAirportMarker: function (airport) {
+    const position = this.pointOnScope(airport);
+    const marker = document.createElement("div");
+    marker.className = "adsb-airport";
+    marker.classList.add(position.x > 70 ? "adsb-airport--label-left" : "adsb-airport--label-right");
+    marker.style.left = `${position.x}%`;
+    marker.style.top = `${position.y}%`;
+    marker.title = [
+      airport.code,
+      airport.name,
+      this.formatDistance(airport.distanceNm)
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    const symbol = document.createElement("div");
+    symbol.className = "adsb-airport-symbol";
+    marker.appendChild(symbol);
+
+    const label = document.createElement("div");
+    label.className = "adsb-airport-label";
+    label.textContent = airport.code || airport.name;
+    marker.appendChild(label);
+
+    return marker;
+  },
+
   buildAircraftMarker: function (plane) {
     const position = this.pointOnScope(plane);
     if (!position) {
@@ -286,6 +372,8 @@ Module.register("MMM-ADSB-Radar", {
 
     const marker = document.createElement("div");
     marker.className = "adsb-aircraft";
+    marker.classList.add(position.x > 68 ? "adsb-aircraft--label-left" : "adsb-aircraft--label-right");
+    marker.classList.add(position.y < 24 ? "adsb-aircraft--label-low" : "adsb-aircraft--label-high");
     if (plane.isStale) {
       marker.classList.add("adsb-aircraft--stale");
     }
@@ -296,18 +384,29 @@ Module.register("MMM-ADSB-Radar", {
     const heading = plane.track || plane.bearing || 0;
     marker.style.left = `${position.x}%`;
     marker.style.top = `${position.y}%`;
-    marker.style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+    marker.style.transform = "translate(-50%, -50%)";
     marker.title = this.aircraftTitle(plane);
 
     const icon = document.createElement("div");
     icon.className = "adsb-aircraft-icon";
+    icon.style.transform = `rotate(${heading}deg)`;
     marker.appendChild(icon);
 
     if (this.config.showLabels) {
+      if (this.config.showLeaderLines) {
+        const leader = document.createElement("div");
+        leader.className = "adsb-label-leader";
+        marker.appendChild(leader);
+      }
+
       const label = document.createElement("div");
       label.className = "adsb-aircraft-label";
-      label.textContent = this.aircraftLabel(plane);
-      label.style.transform = `rotate(${-heading}deg)`;
+      this.aircraftLabelLines(plane).forEach((line, index) => {
+        const labelLine = document.createElement("div");
+        labelLine.className = index === 0 ? "adsb-aircraft-label-primary" : "adsb-aircraft-label-secondary";
+        labelLine.textContent = line;
+        label.appendChild(labelLine);
+      });
       marker.appendChild(label);
     }
 
@@ -319,40 +418,65 @@ Module.register("MMM-ADSB-Radar", {
     list.className = "adsb-list";
 
     if (this.aircraft.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "adsb-list-empty";
-      empty.textContent = this.error ? "Waiting for feed" : "No nearby aircraft";
-      list.appendChild(empty);
+      list.appendChild(this.buildAircraftListEmptyRow(this.error ? "Waiting for feed" : "No nearby aircraft"));
       return list;
     }
 
-    this.aircraft.slice(0, 8).forEach((plane) => {
-      const row = document.createElement("div");
-      row.className = "adsb-row";
-      if (plane.emergency) {
-        row.classList.add("adsb-row--emergency");
-      }
-
-      const callsign = document.createElement("div");
-      callsign.className = "adsb-row-callsign";
-      callsign.textContent = plane.flight || plane.hex || "Unknown";
-      row.appendChild(callsign);
-
-      const details = document.createElement("div");
-      details.className = "adsb-row-details";
-      details.textContent = [
-        this.formatDistance(plane.distanceNm),
-        this.formatAltitude(plane.altitudeFt),
-        this.formatSpeed(plane.speedKt)
-      ]
-        .filter(Boolean)
-        .join(" | ");
-      row.appendChild(details);
-
-      list.appendChild(row);
+    this.aircraft.forEach((plane) => {
+      list.appendChild(this.buildAircraftListRow(plane));
     });
 
     return list;
+  },
+
+  buildAircraftListRow: function (plane) {
+    const row = document.createElement("div");
+    row.className = "adsb-row";
+    if (plane.emergency) {
+      row.classList.add("adsb-row--emergency");
+    }
+
+    const callsign = document.createElement("div");
+    callsign.className = "adsb-row-callsign";
+    callsign.textContent = plane.flight || plane.hex || "Unknown";
+    row.appendChild(callsign);
+
+    const type = document.createElement("div");
+    type.className = "adsb-row-type";
+    type.textContent = plane.aircraftType || "--";
+    row.appendChild(type);
+
+    const details = document.createElement("div");
+    details.className = "adsb-row-details";
+    details.textContent = [
+      this.formatDistance(plane.distanceNm),
+      this.formatAltitude(plane.altitudeFt),
+      this.formatSpeed(plane.speedKt)
+    ]
+      .filter(Boolean)
+      .join(" | ");
+    row.appendChild(details);
+
+    return row;
+  },
+
+  buildAircraftListEmptyRow: function (message) {
+    const row = document.createElement("div");
+    row.className = "adsb-row adsb-row--empty";
+    row.textContent = message;
+    return row;
+  },
+
+  listMaxHeight: function () {
+    if (this.config.listMaxHeight === null || this.config.listMaxHeight === undefined || this.config.listMaxHeight === "") {
+      return `min(var(--adsb-size), 92vw)`;
+    }
+
+    if (typeof this.config.listMaxHeight === "number") {
+      return `${this.config.listMaxHeight}px`;
+    }
+
+    return String(this.config.listMaxHeight);
   },
 
   pointOnScope: function (plane) {
@@ -398,15 +522,17 @@ Module.register("MMM-ADSB-Radar", {
     return pill;
   },
 
-  aircraftLabel: function (plane) {
-    const name = plane.flight || plane.hex || "ID";
-    const distance = this.formatDistance(plane.distanceNm);
-    return `${name} ${distance}`;
+  aircraftLabelLines: function (plane) {
+    return [
+      plane.flight || plane.hex || "UNKNOWN",
+      plane.aircraftType || "TYPE --"
+    ];
   },
 
   aircraftTitle: function (plane) {
     return [
       plane.flight || plane.hex || "Unknown aircraft",
+      plane.aircraftType || "",
       this.formatDistance(plane.distanceNm),
       this.formatAltitude(plane.altitudeFt),
       this.formatSpeed(plane.speedKt)
@@ -456,5 +582,36 @@ Module.register("MMM-ADSB-Radar", {
       hour: "2-digit",
       minute: "2-digit"
     });
+  },
+
+  distanceNm: function (lat1, lon1, lat2, lon2) {
+    const earthRadiusNm = 3440.065;
+    const phi1 = this.toRadians(lat1);
+    const phi2 = this.toRadians(lat2);
+    const deltaPhi = this.toRadians(lat2 - lat1);
+    const deltaLambda = this.toRadians(lon2 - lon1);
+    const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+      Math.cos(phi1) * Math.cos(phi2) *
+      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return earthRadiusNm * c;
+  },
+
+  bearing: function (lat1, lon1, lat2, lon2) {
+    const phi1 = this.toRadians(lat1);
+    const phi2 = this.toRadians(lat2);
+    const deltaLambda = this.toRadians(lon2 - lon1);
+    const y = Math.sin(deltaLambda) * Math.cos(phi2);
+    const x = Math.cos(phi1) * Math.sin(phi2) -
+      Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda);
+    return (this.toDegrees(Math.atan2(y, x)) + 360) % 360;
+  },
+
+  toRadians: function (degrees) {
+    return (degrees * Math.PI) / 180;
+  },
+
+  toDegrees: function (radians) {
+    return (radians * 180) / Math.PI;
   }
 });

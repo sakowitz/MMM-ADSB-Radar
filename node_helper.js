@@ -155,6 +155,8 @@ module.exports = NodeHelper.create({
     return {
       hex: this.cleanHex(value.hex || value.id || key),
       flight: this.firstString(value.flight, value.callsign, value.call, value.name),
+      aircraftType: this.firstString(value.aircraftType, value.aircraft_type, value.type, value.equipment, value.model, value.icaoType, value.ac_type),
+      registration: this.firstString(value.registration, value.reg, value.tail),
       lat,
       lon,
       alt_baro: this.firstNumber(value.alt_baro, value.alt, value.altitude),
@@ -176,7 +178,9 @@ module.exports = NodeHelper.create({
 
     return {
       hex: this.cleanHex(value[0] || key),
-      flight: this.firstString(value[8], value[9], value[16]),
+      flight: this.firstString(value[16], value[13], value[9]),
+      aircraftType: this.firstString(value[8]),
+      registration: this.firstString(value[9]),
       lat,
       lon,
       track: this.numberOrNull(value[3]),
@@ -205,6 +209,8 @@ module.exports = NodeHelper.create({
         return {
           hex: item.hex || "",
           flight: this.firstString(item.flight, item.callsign),
+          aircraftType: this.firstString(item.aircraftType, item.aircraft_type, item.type, item.t, item.equipment, item.model),
+          registration: this.firstString(item.registration, item.reg, item.r),
           lat,
           lon,
           altitudeFt,
@@ -323,6 +329,7 @@ module.exports = NodeHelper.create({
         lat: point.lat,
         lon: point.lon,
         alt_baro: 2500 + index * 3100,
+        aircraftType: ["B738", "A321", "B739", "B737", "A320", "B763", "B752", "C172", "E75L", "B789"][index],
         gs: 135 + index * 29,
         track,
         seen: index % 4,

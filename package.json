@@ -1,6 +1,6 @@
 {
   "name": "mmm-adsb-radar",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MagicMirror module for a Tiny Desk Radar-style ADS-B aircraft scope.",
   "main": "MMM-ADSB-Radar.js",
   "scripts": {
