@@ -119,6 +119,7 @@ http://readsb.local/tar1090/data/aircraft.json
 | `maxAircraft` | `28` | Maximum aircraft to render. |
 | `mode` | `"hybrid"` | `"radar"`, `"list"`, or `"hybrid"`. |
 | `radarSize` | `360` | Radar diameter in pixels. |
+| `animationSpeed` | `0` | MagicMirror DOM fade speed in milliseconds. Keep at `0` to avoid blink on refresh. |
 | `showLabels` | `true` | Show callsign and distance labels on the scope. |
 | `showStats` | `true` | Show aircraft count, range, and update time. |
 | `showList` | `true` | Show the nearby aircraft list in hybrid mode. |
@@ -128,6 +129,7 @@ http://readsb.local/tar1090/data/aircraft.json
 | `trailMaxPoints` | `4` | Number of previous position dots retained per aircraft. |
 | `trailMaxAgeMs` | `90000` | Maximum age of aircraft trail dots. |
 | `showLeaderLines` | `true` | Legacy switch for heading vectors. Set to `false` to hide them. |
+| `showLabelConnectors` | `true` | Show faint connector lines from aircraft targets to labels. |
 | `showHeadingVectors` | `true` | Show ATC-style heading vectors from each aircraft target. |
 | `headingVectorMinPx` | `10` | Minimum heading-vector length in pixels. |
 | `headingVectorMaxPx` | `46` | Maximum heading-vector length in pixels. |

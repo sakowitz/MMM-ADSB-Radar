@@ -23,7 +23,7 @@ Module.register("MMM-ADSB-Radar", {
     mode: "hybrid",
     title: "ADS-B Radar",
     radarSize: 360,
-    animationSpeed: 700,
+    animationSpeed: 0,
     showLabels: true,
     showStats: true,
     showList: true,
@@ -33,6 +33,7 @@ Module.register("MMM-ADSB-Radar", {
     trailMaxPoints: 4,
     trailMaxAgeMs: 90000,
     showLeaderLines: true,
+    showLabelConnectors: true,
     showHeadingVectors: true,
     headingVectorMinPx: 10,
     headingVectorMaxPx: 46,
@@ -114,7 +115,7 @@ Module.register("MMM-ADSB-Radar", {
       this.lastUpdated = new Date(Date.now());
       this.aircraft = this.prepareAircraft(payload.aircraft || []);
       this.updateTrails(this.aircraft);
-      this.updateDom(this.config.animationSpeed);
+      this.updateDom(this.domAnimationSpeed());
       this.scheduleFetch();
       return;
     }
@@ -123,9 +124,14 @@ Module.register("MMM-ADSB-Radar", {
       this.error = payload.message || "Unable to load ADS-B feed";
       this.status = "Feed unavailable";
       this.stats = payload.stats || {};
-      this.updateDom(this.config.animationSpeed);
+      this.updateDom(this.domAnimationSpeed());
       this.scheduleFetch(Math.max(this.config.fetchInterval, 30000));
     }
+  },
+
+  domAnimationSpeed: function () {
+    const speed = Number(this.config.animationSpeed);
+    return Number.isFinite(speed) ? speed : 0;
   },
 
   prepareAircraft: function (aircraft) {
@@ -404,6 +410,12 @@ Module.register("MMM-ADSB-Radar", {
     marker.appendChild(icon);
 
     if (this.config.showLabels) {
+      if (this.config.showLabelConnectors) {
+        const connector = document.createElement("div");
+        connector.className = "adsb-label-connector";
+        marker.appendChild(connector);
+      }
+
       const label = document.createElement("div");
       label.className = "adsb-aircraft-label";
       this.aircraftLabelLines(plane).forEach((line, index) => {
