@@ -12,6 +12,11 @@ Module.register("MMM-ADSB-Radar", {
 
   defaults: {
     receiverUrl: "",
+    source: "receiver",
+    onlineProvider: "airplanesLive",
+    onlineUrl: "",
+    airplanesLiveUrl: "",
+    onlineRangeNm: null,
     centerLat: null,
     centerLon: null,
     rangeNm: 30,

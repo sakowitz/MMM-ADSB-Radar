@@ -2,7 +2,7 @@
 
 A MagicMirror module for a Tiny Desk Radar-style ADS-B view: nearby aircraft plotted on a classic radar scope, with an optional list view and built-in demo traffic.
 
-It is designed for common local receiver feeds such as Flightradar24 Pi24, dump1090, readsb, tar1090, and graphs1090 endpoints.
+It is designed for common local receiver feeds such as Flightradar24 Pi24, dump1090, readsb, tar1090, and graphs1090 endpoints. It can also use Airplanes.live as an online source or fallback.
 
 ## Install
 
@@ -107,11 +107,64 @@ http://adsbexchange.local/tar1090/data/aircraft.json
 http://readsb.local/tar1090/data/aircraft.json
 ```
 
+## Airplanes.live Online Source
+
+To use Airplanes.live instead of a local receiver:
+
+```js
+{
+  module: "MMM-ADSB-Radar",
+  position: "top_right",
+  config: {
+    source: "online",
+    onlineProvider: "airplanesLive",
+    centerLat: 38.6,
+    centerLon: -121.4,
+    rangeNm: 35,
+    fetchInterval: 15000,
+    demoMode: false,
+    mode: "hybrid"
+  }
+}
+```
+
+To use your receiver first and fall back to Airplanes.live when the receiver is empty or unavailable:
+
+```js
+{
+  module: "MMM-ADSB-Radar",
+  position: "top_right",
+  config: {
+    source: "auto",
+    receiverUrl: "http://pi24.local:8754/flights.json",
+    onlineProvider: "airplanesLive",
+    centerLat: 38.6,
+    centerLon: -121.4,
+    rangeNm: 35,
+    fetchInterval: 15000,
+    demoMode: false,
+    mode: "hybrid"
+  }
+}
+```
+
+Airplanes.live's public REST API currently uses:
+
+```text
+https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}
+```
+
+The module fills in `{lat}`, `{lon}`, and `{radius}` from your radar center and range. Radius is capped at 250 nautical miles.
+
 ## Config
 
 | Option | Default | Notes |
 | --- | --- | --- |
+| `source` | `"receiver"` | `"receiver"` uses `receiverUrl`, `"online"` uses Airplanes.live, and `"auto"` uses the receiver first with online fallback. |
 | `receiverUrl` | `""` | URL for a Pi24 `flights.json`, dump1090/readsb/tar1090 `aircraft.json`, or JSONP `flights.js` feed. |
+| `onlineProvider` | `"airplanesLive"` | Online provider. Currently supports `"airplanesLive"`. |
+| `onlineUrl` / `airplanesLiveUrl` | `""` | Optional URL template override. Supports `{lat}`, `{lon}`, `{radius}`, and `{range}` placeholders. |
+| `onlineRangeNm` | `null` | Optional online query radius. Defaults to `rangeNm` and is capped at 250 nm for Airplanes.live. |
 | `centerLat` / `centerLon` | `null` | Radar center. Required for live feeds. |
 | `rangeNm` | `30` | Radar range in nautical miles. |
 | `fetchInterval` | `15000` | Feed refresh interval in milliseconds. |
@@ -155,6 +208,7 @@ http://readsb.local/tar1090/data/aircraft.json
 - No npm package install is required.
 - Demo mode picks a neutral default center if you do not set one.
 - A Pi 3 can read and feed ADS-B data, but running MagicMirror and Pi24 on the same board may feel tight. If your mirror is on another device, point `receiverUrl` at the Pi24 receiver across your LAN.
+- Airplanes.live's REST API does not currently require an account or API key for the public endpoint, but its public API docs list free-tier limits. If you run online mode all day, consider their current terms and limits.
 - Airport markers are intentionally manual for now, so you can keep the scope uncluttered.
 
 ## Next Ideas

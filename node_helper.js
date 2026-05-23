@@ -52,37 +52,136 @@ module.exports = NodeHelper.create({
       throw new Error("Set centerLat and centerLon for the radar location.");
     }
 
-    let feed;
-    let status;
-
     if (demo) {
-      feed = this.makeDemoFeed(config, center);
-      status = "Demo traffic";
-    } else {
-      if (!config.receiverUrl) {
-        throw new Error("Set receiverUrl or enable demoMode.");
-      }
-      feed = await this.fetchJson(config.receiverUrl, config.timeoutMs || 8000);
-      status = "Live receiver";
+      this.sendAircraftResult(instanceId, {
+        feed: this.makeDemoFeed(config, center),
+        status: "Demo traffic",
+        source: "demo"
+      }, config, center);
+      return;
     }
 
+    if (this.sourceMode(config) === "auto") {
+      await this.loadAutoAircraft(instanceId, config, center);
+      return;
+    }
+
+    const result = this.sourceMode(config) === "online" ?
+      await this.loadOnlineFeed(config, center) :
+      await this.loadReceiverFeed(config);
+
+    this.sendAircraftResult(instanceId, result, config, center);
+  },
+
+  sendAircraftResult: function (instanceId, result, config, center, extraStats = {}) {
+    const feed = result.feed || {};
     const feedAircraft = this.extractAircraft(feed);
     const normalized = this.normalizeAircraft(feedAircraft, config, center);
     const aircraft = this.filterAircraft(normalized, config);
 
     this.sendSocketNotification(ADSBRadarNotifications.UPDATE, {
       instanceId,
-      status,
+      status: result.status,
       aircraft: aircraft.slice(0, config.maxAircraft || 28),
       stats: {
-        source: demo ? "demo" : "live",
+        source: result.source,
+        provider: result.provider || null,
         totalFeedAircraft: feedAircraft.length,
         inRange: aircraft.length,
-        messages: feed.messages || null,
-        feedTime: feed.now || null,
-        generatedAt: Date.now()
+        messages: feed.messages || feed.total || null,
+        feedTime: feed.now || feed.ctime || null,
+        generatedAt: Date.now(),
+        url: result.url || null,
+        receiverError: extraStats.receiverError || null,
+        onlineError: extraStats.onlineError || null
       }
     });
+  },
+
+  loadAutoAircraft: async function (instanceId, config, center) {
+    let receiverResult = null;
+    let receiverPayload = null;
+    let receiverError = null;
+
+    if (config.receiverUrl) {
+      try {
+        receiverResult = await this.loadReceiverFeed(config);
+        receiverPayload = this.buildAircraftPayload(receiverResult, config, center);
+
+        if (receiverPayload.aircraft.length > 0) {
+          this.sendAircraftResult(instanceId, receiverResult, config, center);
+          return;
+        }
+      } catch (error) {
+        receiverError = error;
+      }
+    }
+
+    try {
+      const onlineResult = await this.loadOnlineFeed(config, center);
+      this.sendAircraftResult(instanceId, {
+        feed: onlineResult.feed,
+        status: receiverResult ? "Online fallback" : onlineResult.status,
+        source: onlineResult.source,
+        provider: onlineResult.provider,
+        url: onlineResult.url
+      }, config, center, {
+        receiverError: receiverError ? receiverError.message : null
+      });
+      return;
+    } catch (onlineError) {
+      if (receiverResult && receiverPayload) {
+        this.sendAircraftResult(instanceId, receiverResult, config, center, {
+          onlineError: onlineError.message
+        });
+        return;
+      }
+
+      throw receiverError || onlineError;
+    }
+  },
+
+  buildAircraftPayload: function (result, config, center) {
+    const feed = result.feed || {};
+    const feedAircraft = this.extractAircraft(feed);
+    const normalized = this.normalizeAircraft(feedAircraft, config, center);
+    const aircraft = this.filterAircraft(normalized, config);
+
+    return {
+      feedAircraft,
+      aircraft
+    };
+  },
+
+  loadReceiverFeed: async function (config) {
+    if (!config.receiverUrl) {
+      throw new Error("Set receiverUrl, use source: \"online\", or enable demoMode.");
+    }
+
+    return {
+      feed: await this.fetchJson(config.receiverUrl, config.timeoutMs || 8000),
+      status: "Live receiver",
+      source: "receiver",
+      url: config.receiverUrl
+    };
+  },
+
+  loadOnlineFeed: async function (config, center) {
+    const provider = this.onlineProvider(config);
+
+    if (provider !== "airplanesLive") {
+      throw new Error(`Unsupported onlineProvider: ${config.onlineProvider}`);
+    }
+
+    const url = this.airplanesLiveUrl(config, center);
+
+    return {
+      feed: await this.fetchJson(url, config.timeoutMs || 8000),
+      status: "Online Airplanes.live",
+      source: "online",
+      provider,
+      url
+    };
   },
 
   shouldUseDemo: function (config) {
@@ -94,7 +193,48 @@ module.exports = NodeHelper.create({
       return false;
     }
 
-    return !config.receiverUrl;
+    return !config.receiverUrl && this.sourceMode(config) === "receiver";
+  },
+
+  sourceMode: function (config) {
+    const source = String(config.source || config.dataSource || "receiver").trim().toLowerCase();
+
+    if (["online", "internet", "airplaneslive", "airplanes.live"].includes(source)) {
+      return "online";
+    }
+
+    if (["auto", "fallback", "hybrid"].includes(source)) {
+      return "auto";
+    }
+
+    if (source === "demo") {
+      return "demo";
+    }
+
+    return "receiver";
+  },
+
+  onlineProvider: function (config) {
+    const provider = String(config.onlineProvider || "airplanesLive").trim().toLowerCase();
+
+    if (["airplaneslive", "airplanes.live", "airplanes_live"].includes(provider)) {
+      return "airplanesLive";
+    }
+
+    return provider;
+  },
+
+  airplanesLiveUrl: function (config, center) {
+    const radius = Math.min(250, Math.max(1, Math.ceil(Number(config.onlineRangeNm) || Number(config.rangeNm) || 30)));
+    const template = config.airplanesLiveUrl || config.onlineUrl || "https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}";
+    const replacements = {
+      lat: center.lat.toFixed(5),
+      lon: center.lon.toFixed(5),
+      radius,
+      range: radius
+    };
+
+    return String(template).replace(/\{(lat|lon|radius|range)\}/g, (match, key) => encodeURIComponent(replacements[key]));
   },
 
   resolveCenter: function (config, demo) {
@@ -119,6 +259,10 @@ module.exports = NodeHelper.create({
 
     if (Array.isArray(feed.aircraft)) {
       return feed.aircraft;
+    }
+
+    if (Array.isArray(feed.ac)) {
+      return feed.ac;
     }
 
     if (Array.isArray(feed)) {
