@@ -114,6 +114,21 @@
   z-index: 2;
 }
 
+.adsb-range-label {
+  background: var(--adsb-scope);
+  color: color-mix(in srgb, var(--adsb-ring), white 22%);
+  font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  font-size: 10px;
+  left: 50%;
+  line-height: 1;
+  min-width: 18px;
+  padding: 1px 3px;
+  position: absolute;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  z-index: 2;
+}
+
 .adsb-airport {
   color: var(--adsb-airport);
   font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;

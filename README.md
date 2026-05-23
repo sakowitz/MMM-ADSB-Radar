@@ -125,6 +125,8 @@ http://readsb.local/tar1090/data/aircraft.json
 | `showList` | `true` | Show the nearby aircraft list in hybrid mode. |
 | `listWidth` | `220` | Width of the side list in pixels. |
 | `listMaxHeight` | `null` | Maximum side-list height. Defaults to the radar diameter. Extra rows are hidden behind a bottom fade. |
+| `showRangeLabels` | `true` | Show range labels at the top of each radar ring. |
+| `rangeLabelCount` | `4` | Number of labeled range rings. |
 | `showTrails` | `true` | Leave short position trails behind aircraft. |
 | `trailMaxPoints` | `4` | Number of previous position dots retained per aircraft. |
 | `trailMaxAgeMs` | `90000` | Maximum age of aircraft trail dots. |

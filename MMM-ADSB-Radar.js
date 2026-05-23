@@ -29,6 +29,8 @@ Module.register("MMM-ADSB-Radar", {
     showList: true,
     listWidth: 220,
     listMaxHeight: null,
+    showRangeLabels: true,
+    rangeLabelCount: 4,
     showTrails: true,
     trailMaxPoints: 4,
     trailMaxAgeMs: 90000,
@@ -45,7 +47,7 @@ Module.register("MMM-ADSB-Radar", {
     colors: {
       scope: "#061408",
       ring: "rgba(134, 255, 118, 0.26)",
-      sweep: "rgba(96, 255, 96, 0.24)",
+      sweep: "rgba(96, 255, 96, 0.14)",
       aircraft: "#7dff72",
       aircraftStale: "#ffcf70",
       airport: "#a5aaa8",
@@ -277,6 +279,10 @@ Module.register("MMM-ADSB-Radar", {
     ownship.className = "adsb-ownship";
     scope.appendChild(ownship);
 
+    this.buildRangeLabels().forEach((label) => {
+      scope.appendChild(label);
+    });
+
     this.prepareAirports().forEach((airport) => {
       scope.appendChild(this.buildAirportMarker(airport));
     });
@@ -310,6 +316,31 @@ Module.register("MMM-ADSB-Radar", {
     }
 
     return scope;
+  },
+
+  buildRangeLabels: function () {
+    if (!this.config.showRangeLabels) {
+      return [];
+    }
+
+    const rangeNm = Number(this.config.rangeNm);
+    const count = Math.max(1, Number(this.config.rangeLabelCount) || 4);
+
+    if (!Number.isFinite(rangeNm) || rangeNm <= 0) {
+      return [];
+    }
+
+    return Array.from({ length: count }, (_, index) => {
+      const ringNumber = index + 1;
+      const distance = Math.round(rangeNm * ringNumber / count);
+      const radiusPercent = 47 * ringNumber / count;
+      const label = document.createElement("div");
+      label.className = "adsb-range-label";
+      label.style.top = `${50 - radiusPercent}%`;
+      label.textContent = `${distance}`;
+      label.title = `${distance} nm`;
+      return label;
+    });
   },
 
   prepareAirports: function () {
