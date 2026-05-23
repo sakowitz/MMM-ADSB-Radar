@@ -120,6 +120,9 @@ http://readsb.local/tar1090/data/aircraft.json
 | `persistTracks` | `true` | Keep recently seen aircraft on screen briefly when they miss one or two feed updates. |
 | `trackPersistenceMs` | `45000` | Maximum time to retain a missing aircraft target before hiding it. |
 | `trackPersistenceMaxMisses` | `2` | Maximum missed feed updates to retain a target. |
+| `animateAircraft` | `true` | Drift targets between feed updates using reported speed and heading. |
+| `aircraftAnimationDurationMs` | `null` | Animation duration. Defaults to `fetchInterval`. |
+| `aircraftAnimationMaxDistanceNm` | `3` | Maximum projected movement per animation cycle. |
 | `mode` | `"hybrid"` | `"radar"`, `"list"`, or `"hybrid"`. |
 | `radarSize` | `360` | Radar diameter in pixels. |
 | `animationSpeed` | `0` | MagicMirror DOM fade speed in milliseconds. Keep at `0` to avoid blink on refresh. |

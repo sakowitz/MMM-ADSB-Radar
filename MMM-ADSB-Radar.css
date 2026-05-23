@@ -222,6 +222,10 @@
   opacity: 0.22;
 }
 
+.adsb-aircraft--drifting {
+  animation: adsbAircraftDrift var(--adsb-drift-duration, 15000ms) linear forwards;
+}
+
 .adsb-aircraft--emergency {
   color: #ff6b6b;
   filter: drop-shadow(0 0 7px rgba(255, 80, 80, 0.85));
@@ -419,6 +423,24 @@
 @keyframes adsbSweep {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes adsbAircraftDrift {
+  from {
+    left: var(--adsb-x-start);
+    top: var(--adsb-y-start);
+  }
+
+  to {
+    left: var(--adsb-x-end);
+    top: var(--adsb-y-end);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adsb-aircraft--drifting {
+    animation: none;
   }
 }
 

@@ -21,6 +21,9 @@ Module.register("MMM-ADSB-Radar", {
     persistTracks: true,
     trackPersistenceMs: 45000,
     trackPersistenceMaxMisses: 2,
+    animateAircraft: true,
+    aircraftAnimationDurationMs: null,
+    aircraftAnimationMaxDistanceNm: 3,
     minAltitudeFt: null,
     maxAltitudeFt: null,
     mode: "hybrid",
@@ -541,11 +544,21 @@ Module.register("MMM-ADSB-Radar", {
       marker.classList.add("adsb-aircraft--emergency");
     }
 
-    const heading = plane.track || plane.bearing || 0;
-    marker.style.left = `${position.x}%`;
-    marker.style.top = `${position.y}%`;
+    const heading = this.aircraftHeading(plane) || 0;
+    const animatedPosition = this.aircraftAnimationPosition(plane, position);
+    marker.style.left = `${animatedPosition.start.x}%`;
+    marker.style.top = `${animatedPosition.start.y}%`;
     marker.style.transform = "translate(-50%, -50%)";
     marker.title = this.aircraftTitle(plane);
+
+    if (animatedPosition.end) {
+      marker.classList.add("adsb-aircraft--drifting");
+      marker.style.setProperty("--adsb-x-start", `${animatedPosition.start.x}%`);
+      marker.style.setProperty("--adsb-y-start", `${animatedPosition.start.y}%`);
+      marker.style.setProperty("--adsb-x-end", `${animatedPosition.end.x}%`);
+      marker.style.setProperty("--adsb-y-end", `${animatedPosition.end.y}%`);
+      marker.style.setProperty("--adsb-drift-duration", `${this.aircraftAnimationDurationMs()}ms`);
+    }
 
     if (this.config.showLeaderLines && this.config.showHeadingVectors) {
       const vector = document.createElement("div");
@@ -669,6 +682,92 @@ Module.register("MMM-ADSB-Radar", {
       x: 50 + Math.sin(radians) * radius,
       y: 50 - Math.cos(radians) * radius
     };
+  },
+
+  aircraftAnimationPosition: function (plane, position) {
+    if (!this.config.animateAircraft || !position) {
+      return { start: position, end: null };
+    }
+
+    const durationMs = this.aircraftAnimationDurationMs();
+    const startAgeMs = plane.isCoasting ? Math.max(0, Number(plane.coastingAgeMs) || 0) : 0;
+    const start = startAgeMs > 0 ? this.projectPosition(plane, position, startAgeMs) : position;
+    const end = this.projectPosition(plane, start, durationMs);
+
+    if (!end || this.positionsAreSame(start, end)) {
+      return { start, end: null };
+    }
+
+    return { start, end };
+  },
+
+  aircraftAnimationDurationMs: function () {
+    const configuredDuration = this.config.aircraftAnimationDurationMs;
+    if (configuredDuration === null || configuredDuration === undefined || configuredDuration === "") {
+      return this.fetchIntervalMs();
+    }
+
+    const duration = Number(this.config.aircraftAnimationDurationMs);
+    if (Number.isFinite(duration) && duration >= 0) {
+      return duration;
+    }
+
+    return this.fetchIntervalMs();
+  },
+
+  projectPosition: function (plane, position, durationMs) {
+    const heading = this.aircraftHeading(plane);
+    const speedKt = Number(plane.speedKt);
+    const rangeNm = Number(this.config.rangeNm) || this.defaults.rangeNm;
+
+    if (!Number.isFinite(heading) || !Number.isFinite(speedKt) || speedKt <= 0 || durationMs <= 0 || rangeNm <= 0) {
+      return position;
+    }
+
+    const maxDistanceNm = Number(this.config.aircraftAnimationMaxDistanceNm);
+    let distanceNm = speedKt * (durationMs / 3600000);
+
+    if (Number.isFinite(maxDistanceNm) && maxDistanceNm > 0) {
+      distanceNm = Math.min(distanceNm, maxDistanceNm);
+    }
+
+    const delta = distanceNm / rangeNm * 47;
+    const radians = this.toRadians(heading);
+
+    return this.clampScopePosition({
+      x: position.x + Math.sin(radians) * delta,
+      y: position.y - Math.cos(radians) * delta
+    });
+  },
+
+  clampScopePosition: function (position) {
+    const deltaX = position.x - 50;
+    const deltaY = position.y - 50;
+    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+
+    if (distance <= 47) {
+      return position;
+    }
+
+    const scale = 47 / distance;
+    return {
+      x: 50 + deltaX * scale,
+      y: 50 + deltaY * scale
+    };
+  },
+
+  aircraftHeading: function (plane) {
+    const track = Number(plane.track);
+    if (Number.isFinite(track)) {
+      return track;
+    }
+
+    const bearing = Number(plane.bearing);
+    return Number.isFinite(bearing) ? bearing : null;
+  },
+
+  positionsAreSame: function (a, b) {
+    return Math.abs(a.x - b.x) < 0.01 && Math.abs(a.y - b.y) < 0.01;
   },
 
   statusText: function () {
