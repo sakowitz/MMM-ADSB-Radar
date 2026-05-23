@@ -74,7 +74,6 @@
   background:
     linear-gradient(90deg, transparent calc(50% - 0.5px), var(--adsb-ring) 50%, transparent calc(50% + 0.5px)),
     linear-gradient(0deg, transparent calc(50% - 0.5px), var(--adsb-ring) 50%, transparent calc(50% + 0.5px)),
-    repeating-radial-gradient(circle at center, transparent 0, transparent 19.5%, var(--adsb-ring) 20%, transparent 20.5%),
     radial-gradient(circle at center, color-mix(in srgb, var(--adsb-scope), white 8%) 0, var(--adsb-scope) 70%);
   border: 1px solid var(--adsb-ring);
   border-radius: 50%;
@@ -114,8 +113,20 @@
   z-index: 2;
 }
 
+.adsb-range-ring {
+  border: 1px solid var(--adsb-ring);
+  border-radius: 50%;
+  box-sizing: border-box;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+}
+
 .adsb-range-label {
-  background: color-mix(in srgb, var(--adsb-scope), white 6%);
+  background: var(--adsb-scope);
   color: color-mix(in srgb, var(--adsb-ring), white 22%);
   font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
   font-size: 8px;
