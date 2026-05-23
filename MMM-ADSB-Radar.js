@@ -271,9 +271,9 @@ Module.register("MMM-ADSB-Radar", {
     sweep.className = "adsb-sweep";
     scope.appendChild(sweep);
 
-    const crosshair = document.createElement("div");
-    crosshair.className = "adsb-crosshair";
-    scope.appendChild(crosshair);
+    this.buildRangeRings().forEach((ring) => {
+      scope.appendChild(ring);
+    });
 
     this.buildRangeRings().forEach((ring) => {
       scope.appendChild(ring);
