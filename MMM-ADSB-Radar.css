@@ -115,14 +115,14 @@
 }
 
 .adsb-range-label {
-  background: color-mix(in srgb, var(--adsb-scope), black 14%);
+  background: color-mix(in srgb, var(--adsb-scope), white 6%);
   color: color-mix(in srgb, var(--adsb-ring), white 22%);
   font-family: "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
   font-size: 8px;
   left: 50%;
   line-height: 1;
   min-width: 14px;
-  padding: 1px 5px;
+  padding: 0 5px;
   position: absolute;
   text-align: center;
   transform: translate(-50%, -50%);

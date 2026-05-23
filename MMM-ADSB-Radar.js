@@ -336,7 +336,7 @@ Module.register("MMM-ADSB-Radar", {
       const radiusPercent = 47 * ringNumber / count;
       const label = document.createElement("div");
       label.className = "adsb-range-label";
-      label.style.top = `${50 - radiusPercent * 0.426}%`;
+      label.style.top = `${50 - radiusPercent}%`;
       label.textContent = `${distance}`;
       label.title = `${distance} nm`;
       return label;
