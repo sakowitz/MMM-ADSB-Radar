@@ -209,6 +209,19 @@
   color: var(--adsb-plane-stale);
 }
 
+.adsb-aircraft--coasting {
+  opacity: 0.48;
+}
+
+.adsb-aircraft--coasting .adsb-aircraft-icon {
+  border-style: dashed;
+}
+
+.adsb-aircraft--coasting .adsb-heading-vector,
+.adsb-aircraft--coasting .adsb-label-connector {
+  opacity: 0.22;
+}
+
 .adsb-aircraft--emergency {
   color: #ff6b6b;
   filter: drop-shadow(0 0 7px rgba(255, 80, 80, 0.85));
@@ -356,6 +369,10 @@
 
 .adsb-row--emergency {
   color: #ff6b6b;
+}
+
+.adsb-row--coasting {
+  opacity: 0.5;
 }
 
 .adsb-row-callsign {

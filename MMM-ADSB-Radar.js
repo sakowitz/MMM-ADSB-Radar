@@ -18,6 +18,9 @@ Module.register("MMM-ADSB-Radar", {
     fetchInterval: 15000,
     maxSeenSeconds: 45,
     maxAircraft: 28,
+    persistTracks: true,
+    trackPersistenceMs: 45000,
+    trackPersistenceMaxMisses: 2,
     minAltitudeFt: null,
     maxAltitudeFt: null,
     mode: "hybrid",
@@ -66,6 +69,7 @@ Module.register("MMM-ADSB-Radar", {
     this.lastUpdated = null;
     this.fetchTimer = null;
     this.trails = {};
+    this.trackedAircraft = {};
 
     this.sendConfig();
     this.scheduleFetch(100);
@@ -102,7 +106,7 @@ Module.register("MMM-ADSB-Radar", {
       this.sendSocketNotification(ADSBRadarNotifications.REQUEST, {
         instanceId: this.instanceId
       });
-    }, typeof delay === "number" ? delay : this.config.fetchInterval);
+    }, typeof delay === "number" ? delay : this.fetchIntervalMs());
   },
 
   socketNotificationReceived: function (notification, payload) {
@@ -115,7 +119,7 @@ Module.register("MMM-ADSB-Radar", {
       this.status = payload.status || "Radar updated";
       this.stats = payload.stats || {};
       this.lastUpdated = new Date(Date.now());
-      this.aircraft = this.prepareAircraft(payload.aircraft || []);
+      this.aircraft = this.mergeTrackedAircraft(this.prepareAircraft(payload.aircraft || []));
       this.updateTrails(this.aircraft);
       this.updateDom(this.domAnimationSpeed());
       this.scheduleFetch();
@@ -143,6 +147,86 @@ Module.register("MMM-ADSB-Radar", {
       .slice(0, this.config.maxAircraft);
   },
 
+  mergeTrackedAircraft: function (liveAircraft) {
+    if (!this.config.persistTracks) {
+      this.trackedAircraft = {};
+      return liveAircraft;
+    }
+
+    const now = Date.now();
+    const activeKeys = {};
+    const retainedAircraft = [];
+    const maxAgeMs = Math.max(0, Number(this.config.trackPersistenceMs) || 0);
+    const maxMisses = Math.max(0, Number(this.config.trackPersistenceMaxMisses) || 0);
+
+    liveAircraft.forEach((plane) => {
+      const key = this.trackKey(plane);
+
+      if (!key) {
+        return;
+      }
+
+      activeKeys[key] = true;
+      this.trackedAircraft[key] = {
+        aircraft: Object.assign({}, plane, {
+          isCoasting: false,
+          coastingAgeMs: 0,
+          missedPolls: 0
+        }),
+        lastSeenAt: now,
+        missedPolls: 0
+      };
+    });
+
+    Object.keys(this.trackedAircraft).forEach((key) => {
+      const track = this.trackedAircraft[key];
+
+      if (activeKeys[key]) {
+        return;
+      }
+
+      track.missedPolls = (track.missedPolls || 0) + 1;
+
+      const ageMs = now - track.lastSeenAt;
+      if (ageMs > maxAgeMs || track.missedPolls > maxMisses) {
+        delete this.trackedAircraft[key];
+        return;
+      }
+
+      retainedAircraft.push(Object.assign({}, track.aircraft, {
+        isCoasting: true,
+        coastingAgeMs: ageMs,
+        missedPolls: track.missedPolls,
+        seen: Math.max(track.aircraft.seen || 0, ageMs / 1000),
+        isStale: track.aircraft.isStale || ageMs > this.fetchIntervalMs()
+      }));
+    });
+
+    return liveAircraft
+      .concat(retainedAircraft)
+      .filter((item) => typeof item.distanceNm === "number" && item.distanceNm <= this.config.rangeNm)
+      .sort((a, b) => {
+        if (a.isCoasting && !b.isCoasting) {
+          return 1;
+        }
+
+        if (!a.isCoasting && b.isCoasting) {
+          return -1;
+        }
+
+        return a.distanceNm - b.distanceNm;
+      })
+      .slice(0, this.config.maxAircraft);
+  },
+
+  trackKey: function (plane) {
+    return String(plane.hex || plane.flight || plane.registration || "").trim().toUpperCase();
+  },
+
+  fetchIntervalMs: function () {
+    return Math.max(0, Number(this.config.fetchInterval) || this.defaults.fetchInterval);
+  },
+
   updateTrails: function (aircraft) {
     if (!this.config.showTrails) {
       this.trails = {};
@@ -153,12 +237,16 @@ Module.register("MMM-ADSB-Radar", {
     const now = Date.now();
 
     aircraft.forEach((plane) => {
-      const key = plane.hex || plane.flight;
+      const key = this.trackKey(plane);
       if (!key) {
         return;
       }
 
       activeKeys[key] = true;
+      if (plane.isCoasting) {
+        return;
+      }
+
       if (!this.trails[key]) {
         this.trails[key] = [];
       }
@@ -175,6 +263,8 @@ Module.register("MMM-ADSB-Radar", {
     });
 
     Object.keys(this.trails).forEach((key) => {
+      this.trails[key] = this.trails[key].filter((point) => now - point.timestamp < this.config.trailMaxAgeMs);
+
       if (!activeKeys[key]) {
         this.trails[key] = this.trails[key].filter((point) => now - point.timestamp < this.config.trailMaxAgeMs / 2);
       }
@@ -444,6 +534,9 @@ Module.register("MMM-ADSB-Radar", {
     if (plane.isStale) {
       marker.classList.add("adsb-aircraft--stale");
     }
+    if (plane.isCoasting) {
+      marker.classList.add("adsb-aircraft--coasting");
+    }
     if (plane.emergency) {
       marker.classList.add("adsb-aircraft--emergency");
     }
@@ -508,6 +601,9 @@ Module.register("MMM-ADSB-Radar", {
     row.className = "adsb-row";
     if (plane.emergency) {
       row.classList.add("adsb-row--emergency");
+    }
+    if (plane.isCoasting) {
+      row.classList.add("adsb-row--coasting");
     }
 
     const callsign = document.createElement("div");
