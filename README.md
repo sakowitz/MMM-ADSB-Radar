@@ -156,6 +156,31 @@ https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}
 
 The module fills in `{lat}`, `{lon}`, and `{radius}` from your radar center and range. Radius is capped at 250 nautical miles.
 
+## Local Aircraft Type Database
+
+Pi24's `flights.json` usually includes callsign and hex code, but often does not include aircraft type. The module can enrich local receiver data from a compact local lookup database generated from OpenSky's aircraft metadata CSV.
+
+Build the database inside the module folder:
+
+```bash
+cd ~/MagicMirror/modules/MMM-ADSB-Radar
+npm run build:aircraft-db
+```
+
+This creates ignored local files in:
+
+```text
+aircraft-db/
+```
+
+The generated database maps aircraft hex codes to ICAO type codes and registrations. It is intentionally not committed to GitHub, so regular `git pull` stays small. Re-run the build command whenever you want to refresh the lookup data.
+
+If you already downloaded OpenSky's CSV manually, build from that file instead:
+
+```bash
+node scripts/build-aircraft-db.js --source /path/to/aircraftDatabase.csv
+```
+
 ## Config
 
 | Option | Default | Notes |
@@ -165,6 +190,10 @@ The module fills in `{lat}`, `{lon}`, and `{radius}` from your radar center and 
 | `onlineProvider` | `"airplanesLive"` | Online provider. Currently supports `"airplanesLive"`. |
 | `onlineUrl` / `airplanesLiveUrl` | `""` | Optional URL template override. Supports `{lat}`, `{lon}`, `{radius}`, and `{range}` placeholders. |
 | `onlineRangeNm` | `null` | Optional online query radius. Defaults to `rangeNm` and is capped at 250 nm for Airplanes.live. |
+| `aircraftDbEnabled` | `true` | Use a local hex-to-aircraft lookup database when present. |
+| `aircraftDbPath` | `"aircraft-db"` | Path to generated lookup chunks. Relative paths resolve inside the module folder. |
+| `aircraftDbChunkLength` | `2` | Hex prefix length used for database chunk files. Match the builder's `--chunk-length` value. |
+| `aircraftDbMaxCachedChunks` | `16` | Maximum aircraft DB chunks cached in memory. |
 | `centerLat` / `centerLon` | `null` | Radar center. Required for live feeds. |
 | `rangeNm` | `30` | Radar range in nautical miles. |
 | `fetchInterval` | `15000` | Feed refresh interval in milliseconds. |
@@ -209,6 +238,7 @@ The module fills in `{lat}`, `{lon}`, and `{radius}` from your radar center and 
 - Demo mode picks a neutral default center if you do not set one.
 - A Pi 3 can read and feed ADS-B data, but running MagicMirror and Pi24 on the same board may feel tight. If your mirror is on another device, point `receiverUrl` at the Pi24 receiver across your LAN.
 - Airplanes.live's REST API does not currently require an account or API key for the public endpoint, but its public API docs list free-tier limits. If you run online mode all day, consider their current terms and limits.
+- The local aircraft database is best-effort metadata. Some military, blocked, temporary, or recently changed aircraft may still show no type.
 - Airport markers are intentionally manual for now, so you can keep the scope uncluttered.
 
 ## Next Ideas

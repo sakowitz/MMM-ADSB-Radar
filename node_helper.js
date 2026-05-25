@@ -1,7 +1,9 @@
 const NodeHelper = require("node_helper");
 const Log = require("logger");
+const fs = require("fs");
 const http = require("http");
 const https = require("https");
+const path = require("path");
 
 const ADSBRadarNotifications = {
   CONFIG: "MMM_ADSB_RADAR_CONFIG",
@@ -20,6 +22,8 @@ module.exports = NodeHelper.create({
 
   start: function () {
     this.configs = {};
+    this.aircraftDbCache = {};
+    this.aircraftDbCacheOrder = [];
   },
 
   socketNotificationReceived: function (notification, payload) {
@@ -77,7 +81,8 @@ module.exports = NodeHelper.create({
     const feed = result.feed || {};
     const feedAircraft = this.extractAircraft(feed);
     const normalized = this.normalizeAircraft(feedAircraft, config, center);
-    const aircraft = this.filterAircraft(normalized, config);
+    const enriched = this.enrichAircraft(normalized, config);
+    const aircraft = this.filterAircraft(enriched, config);
 
     this.sendSocketNotification(ADSBRadarNotifications.UPDATE, {
       instanceId,
@@ -145,7 +150,8 @@ module.exports = NodeHelper.create({
     const feed = result.feed || {};
     const feedAircraft = this.extractAircraft(feed);
     const normalized = this.normalizeAircraft(feedAircraft, config, center);
-    const aircraft = this.filterAircraft(normalized, config);
+    const enriched = this.enrichAircraft(normalized, config);
+    const aircraft = this.filterAircraft(enriched, config);
 
     return {
       feedAircraft,
@@ -351,7 +357,7 @@ module.exports = NodeHelper.create({
         const track = this.firstNumber(item.track, item.true_heading, item.nav_heading, item.mag_heading);
 
         return {
-          hex: item.hex || "",
+          hex: this.cleanHex(item.hex || item.icao24 || item.icao || item.addr || ""),
           flight: this.firstString(item.flight, item.callsign),
           aircraftType: this.firstString(item.aircraftType, item.aircraft_type, item.type, item.t, item.equipment, item.model),
           registration: this.firstString(item.registration, item.reg, item.r),
@@ -369,6 +375,118 @@ module.exports = NodeHelper.create({
         };
       })
       .filter(Boolean);
+  },
+
+  enrichAircraft: function (aircraft, config) {
+    if (!this.aircraftDbEnabled(config)) {
+      return aircraft;
+    }
+
+    return aircraft.map((item) => {
+      if (!item.hex || (item.aircraftType && item.registration)) {
+        return item;
+      }
+
+      const lookup = this.aircraftDbLookup(item.hex, config);
+
+      if (!lookup) {
+        return item;
+      }
+
+      return Object.assign({}, item, {
+        aircraftType: item.aircraftType || lookup.aircraftType || "",
+        registration: item.registration || lookup.registration || "",
+        aircraftModel: item.aircraftModel || lookup.model || "",
+        aircraftOperator: item.aircraftOperator || lookup.operator || ""
+      });
+    });
+  },
+
+  aircraftDbEnabled: function (config) {
+    return config.aircraftDbEnabled !== false;
+  },
+
+  aircraftDbLookup: function (hex, config) {
+    const cleanHex = this.cleanHex(hex);
+    const prefixLength = this.aircraftDbChunkLength(config);
+
+    if (!cleanHex || cleanHex.length < prefixLength) {
+      return null;
+    }
+
+    const prefix = cleanHex.slice(0, prefixLength);
+    const chunk = this.loadAircraftDbChunk(prefix, config);
+    const record = chunk && chunk[cleanHex];
+
+    return this.decodeAircraftDbRecord(record);
+  },
+
+  loadAircraftDbChunk: function (prefix, config) {
+    if (Object.prototype.hasOwnProperty.call(this.aircraftDbCache, prefix)) {
+      return this.aircraftDbCache[prefix];
+    }
+
+    const filePath = path.join(this.aircraftDbDirectory(config), `${prefix}.json`);
+    let chunk = null;
+
+    try {
+      if (fs.existsSync(filePath)) {
+        chunk = JSON.parse(fs.readFileSync(filePath, "utf8"));
+      }
+    } catch (error) {
+      Log.warn(`${this.name}: Could not load aircraft DB chunk ${prefix}: ${error.message}`);
+      chunk = null;
+    }
+
+    this.rememberAircraftDbChunk(prefix, chunk, config);
+    return chunk;
+  },
+
+  rememberAircraftDbChunk: function (prefix, chunk, config) {
+    this.aircraftDbCache[prefix] = chunk;
+    this.aircraftDbCacheOrder = this.aircraftDbCacheOrder.filter((item) => item !== prefix);
+    this.aircraftDbCacheOrder.push(prefix);
+
+    const maxCachedChunks = Math.max(1, Number(config.aircraftDbMaxCachedChunks) || 16);
+    while (this.aircraftDbCacheOrder.length > maxCachedChunks) {
+      const oldest = this.aircraftDbCacheOrder.shift();
+      delete this.aircraftDbCache[oldest];
+    }
+  },
+
+  aircraftDbDirectory: function (config) {
+    const configuredPath = config.aircraftDbPath || "aircraft-db";
+    return path.isAbsolute(configuredPath) ? configuredPath : path.join(__dirname, configuredPath);
+  },
+
+  aircraftDbChunkLength: function (config) {
+    return Math.max(1, Math.min(6, Number(config.aircraftDbChunkLength) || 2));
+  },
+
+  decodeAircraftDbRecord: function (record) {
+    if (!record) {
+      return null;
+    }
+
+    if (Array.isArray(record)) {
+      return {
+        aircraftType: this.firstString(record[0]),
+        registration: this.firstString(record[1]),
+        model: this.firstString(record[2]),
+        operator: this.firstString(record[3])
+      };
+    }
+
+    if (typeof record === "object") {
+      return {
+        aircraftType: this.firstString(record.aircraftType, record.typecode, record.type, record.t),
+        registration: this.firstString(record.registration, record.reg, record.r),
+        model: this.firstString(record.model),
+        operator: this.firstString(record.operator, record.owner)
+      };
+    }
+
+    return null;
   },
 
   filterAircraft: function (aircraft, config) {

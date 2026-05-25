@@ -17,6 +17,10 @@ Module.register("MMM-ADSB-Radar", {
     onlineUrl: "",
     airplanesLiveUrl: "",
     onlineRangeNm: null,
+    aircraftDbEnabled: true,
+    aircraftDbPath: "aircraft-db",
+    aircraftDbChunkLength: 2,
+    aircraftDbMaxCachedChunks: 16,
     centerLat: null,
     centerLon: null,
     rangeNm: 30,
@@ -805,13 +809,17 @@ Module.register("MMM-ADSB-Radar", {
   },
 
   aircraftLabelLines: function (plane) {
-    return [plane.flight || plane.hex || "UNKNOWN"];
+    return [
+      plane.flight || plane.hex || "UNKNOWN",
+      plane.aircraftType || ""
+    ].filter(Boolean);
   },
 
   aircraftTitle: function (plane) {
     return [
       plane.flight || plane.hex || "Unknown aircraft",
       plane.aircraftType || "",
+      plane.registration || "",
       this.formatDistance(plane.distanceNm),
       this.formatAltitude(plane.altitudeFt),
       this.formatSpeed(plane.speedKt)

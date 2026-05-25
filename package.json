@@ -4,6 +4,7 @@
   "description": "MagicMirror module for a Tiny Desk Radar-style ADS-B aircraft scope.",
   "main": "MMM-ADSB-Radar.js",
   "scripts": {
+    "build:aircraft-db": "node scripts/build-aircraft-db.js",
     "check": "node --check MMM-ADSB-Radar.js && node --check node_helper.js"
   },
   "keywords": [
