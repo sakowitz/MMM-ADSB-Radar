@@ -20,7 +20,7 @@ Install into your MagicMirror `modules` directory.
 
 ```bash
 cd ~/MagicMirror/modules
-git clone https://github.com/sakowitz/MMM-ADSB-radar.git MMM-ADSB-Radar
+git clone https://github.com/sakowitz/MMM-ADSB-Radar.git
 ```
 
 ## Update
