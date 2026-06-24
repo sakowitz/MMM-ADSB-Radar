@@ -82,14 +82,14 @@ Use this for Pi24, dump1090, readsb, tar1090, or graphs1090 JSON feeds.
     centerLat: 37.6213,
     centerLon: -122.379,
     rangeNm: 35,
+    source: "receiver",
+    receiverUrl: "http://your-receiver.local:8754/flights.json",
     showAirports: true,
     airports: [
       { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
       { code: "OAK", name: "Oakland Intl", lat: 37.7213, lon: -122.2207 },
       { code: "SJC", name: "San Jose Intl", lat: 37.3639, lon: -121.9289 }
-    ],
-    source: "receiver",
-    receiverUrl: "http://your-receiver.local:8754/flights.json"
+    ]
   }
 }
 ```
@@ -129,16 +129,16 @@ Receiver-first with Airplanes.live fallback:
     centerLat: 37.6213,
     centerLon: -122.379,
     rangeNm: 35,
+    source: "auto",
+    receiverUrl: "http://your-receiver.local:8754/flights.json",
+    onlineProvider: "airplanesLive",
+    fetchInterval: 15000,
     showAirports: true,
     airports: [
       { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
       { code: "OAK", name: "Oakland Intl", lat: 37.7213, lon: -122.2207 },
       { code: "SJC", name: "San Jose Intl", lat: 37.3639, lon: -121.9289 }
-    ],
-    source: "auto",
-    receiverUrl: "http://your-receiver.local:8754/flights.json",
-    onlineProvider: "airplanesLive",
-    fetchInterval: 15000
+    ]
   }
 }
 ```
