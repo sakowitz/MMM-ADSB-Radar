@@ -53,7 +53,15 @@ Default demo example:
   module: "MMM-ADSB-Radar",
   position: "top_right",
   config: {
-    showAirports: true
+    centerLat: 37.6213,
+    centerLon: -122.379,
+    rangeNm: 35,
+    showAirports: true,
+    airports: [
+      { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
+      { code: "OAK", name: "Oakland Intl", lat: 37.7213, lon: -122.2207 },
+      { code: "SJC", name: "San Jose Intl", lat: 37.3639, lon: -121.9289 }
+    ]
   }
 }
 ```
