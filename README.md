@@ -46,21 +46,14 @@ Add MMM-ADSB-Radar module to the modules array in the config/config.js file.
 
 The module demos automatically when no receiver URL is set. Airplanes.live can be used as the primary source or as a fallback when your local receiver is empty or unavailable. See the [Airplanes.live REST API guide](https://airplanes.live/api-guide/) and [API tier page](https://airplanes.live/api/) for current limits and terms.
 
-Online-only example:
+Default demo example:
 
 ```js
 {
   module: "MMM-ADSB-Radar",
   position: "top_right",
   config: {
-    source: "online",
-    onlineProvider: "airplanesLive",
-    centerLat: 37.6213,
-    centerLon: -122.379,
-    rangeNm: 35,
-    fetchInterval: 180000,
-    demoMode: false,
-    mode: "hybrid"
+    showAirports: true
   }
 }
 ```
