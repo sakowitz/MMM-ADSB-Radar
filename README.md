@@ -10,6 +10,10 @@ The default view is a demo radar centered on the San Francisco Bay Area, with SF
 
 ![MMM-ADSB-Radar with aircraft list](docs/screenshots/radar-with-list.png)
 
+### Sidebar With List
+
+![MMM-ADSB-Radar sidebar layout with aircraft list below radar](docs/screenshots/radar-sidebar-list.png)
+
 ### Radar Only
 
 ![MMM-ADSB-Radar radar-only view](docs/screenshots/radar-only.png)
