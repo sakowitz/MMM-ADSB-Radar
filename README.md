@@ -53,6 +53,7 @@ Default demo example:
   module: "MMM-ADSB-Radar",
   position: "top_right",
   config: {
+    demoMode: true,
     centerLat: 37.6213,
     centerLon: -122.379,
     rangeNm: 35,
