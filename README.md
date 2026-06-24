@@ -1,8 +1,8 @@
 # MMM-ADSB-Radar
 
-A MagicMirror module for a Tiny Desk Radar-style ADS-B view: nearby aircraft plotted on a classic radar scope, with optional airport markers, aircraft labels, short trails, heading vectors, a side list, demo traffic, local receiver support, Airplanes.live support, and optional local aircraft type lookup.
+A MagicMirror module for a [Tiny Desk Radar](https://www.gadgies.co.uk/)-style ADS-B viewer. Initially built for use with Flightradar24's Pi24 project to view the live data your receiver is sending. This module can also use live traffic data from Airplanes.live.
 
-The default view is a demo radar centered on the San Francisco Bay Area, with SFO, OAK, and SJC airports shown.
+The default view is a demo radar centered on the San Francisco Bay Area with SFO, OAK, and SJC airports shown.
 
 ## Screenshots
 
@@ -42,39 +42,27 @@ npm run build:aircraft-db
 
 ## Configuration
 
-Configure this module only from MagicMirror's main config file:
+Add MMM-ADSB-Radar module to the modules array in the config/config.js file.
 
-```text
-~/MagicMirror/config/config.js
-```
+The module demos automatically when no receiver URL is set. Airplanes.live can be used as the primary source or as a fallback when your local receiver is empty or unavailable. See the [Airplanes.live REST API guide](https://airplanes.live/api-guide/) and [API tier page](https://airplanes.live/api/) for current limits and terms.
 
-Do not edit tracked files inside `MMM-ADSB-Radar` to set your receiver URL, location, colors, airport list, or other personal settings. The module folder contains code, defaults, documentation, and safe examples only. Your real settings belong in the `config` object inside MagicMirror's `config/config.js`, so future `git pull` updates do not overwrite them.
-
-Safe copy-paste snippets are also available in `MMM-ADSB-Radar/examples/config.js`.
-
-## Default Demo Configuration
-
-The module demos automatically when no receiver URL is set. This minimal config starts the Bay Area demo view:
+Online-only example:
 
 ```js
 {
   module: "MMM-ADSB-Radar",
   position: "top_right",
-  config: {}
+  config: {
+    source: "online",
+    onlineProvider: "airplanesLive",
+    centerLat: 37.6213,
+    centerLon: -122.379,
+    rangeNm: 35,
+    fetchInterval: 180000,
+    demoMode: false,
+    mode: "hybrid"
+  }
 }
-```
-
-The default center is near SFO:
-
-```js
-centerLat: 37.6213,
-centerLon: -122.379,
-rangeNm: 35,
-airports: [
-  { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
-  { code: "OAK", name: "Oakland Intl", lat: 37.7213, lon: -122.2207 },
-  { code: "SJC", name: "San Jose Intl", lat: 37.3639, lon: -121.9289 }
-]
 ```
 
 ## Local Receiver Example
@@ -120,29 +108,6 @@ To enable a dump1090-style HTTP feed in Pi24, add this to the dump1090 process a
 --net --net-http-port 8888
 ```
 
-## Airplanes.live Online Source
-
-Airplanes.live can be used as the primary source or as a fallback when your local receiver is empty or unavailable. See the [Airplanes.live REST API guide](https://airplanes.live/api-guide/) and [API tier page](https://airplanes.live/api/) for current limits and terms.
-
-Online-only example:
-
-```js
-{
-  module: "MMM-ADSB-Radar",
-  position: "top_right",
-  config: {
-    source: "online",
-    onlineProvider: "airplanesLive",
-    centerLat: 37.6213,
-    centerLon: -122.379,
-    rangeNm: 35,
-    fetchInterval: 180000,
-    demoMode: false,
-    mode: "hybrid"
-  }
-}
-```
-
 Receiver-first with Airplanes.live fallback:
 
 ```js
@@ -171,11 +136,11 @@ https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}
 
 The module fills in `{lat}`, `{lon}`, and `{radius}` from your radar center and range. Radius is capped at 250 nautical miles.
 
-`fetchInterval` is used for every source, including Pi24/local receiver feeds and Airplanes.live. The default is 15000 ms, which is a good local-receiver refresh rate. Airplanes.live's public REST docs list a 1 request/second rate limit, so 15000 ms is well below that technical rate limit. Their API tier page also lists a free pull limit of 500 requests/day; if you run online-only mode all day on the free tier, use about 180000 ms or higher.
+`fetchInterval` is used for every source, including Pi24/local receiver feeds and Airplanes.live. The default is 15000 ms, which is a good local-receiver refresh rate. Their API tier page lists a free pull limit of 500 requests/day; if you run online-only mode all day on the free tier, use 180000 ms or higher.
 
 ## Local Aircraft Type Database
 
-Pi24's `flights.json` usually includes callsign and hex code, but often does not include aircraft type. The module can enrich local receiver data from a compact local lookup database generated from OpenSky's aircraft metadata CSV.
+Pi24's `flights.json` usually includes callsign and hex code, but often does not include aircraft type. The module can enrich local receiver data from a compact local lookup database generated from OpenSky's aircraft metadata CSV. 15-30 MB of local disk space is needed for the optional aircraft type database.
 
 Build the database inside the module folder:
 
@@ -194,25 +159,6 @@ If you already downloaded OpenSky's CSV manually, build from that file instead:
 node scripts/build-aircraft-db.js --source /path/to/aircraftDatabase.csv
 ```
 
-## Dependencies
-
-Required:
-
-- MagicMirror 2.1.0 or newer.
-- Node.js as provided by your MagicMirror installation.
-- Git for install and update commands.
-
-Not required:
-
-- No runtime npm packages are required.
-- No `npm install` is required for normal module use.
-
-Optional:
-
-- A local ADS-B feed such as Pi24, dump1090, readsb, tar1090, or graphs1090.
-- Internet access for Airplanes.live online mode.
-- Internet access and about 15-30 MB of local disk space for the optional aircraft type database.
-
 ## Options
 
 | Option | Default | Description |
@@ -229,7 +175,7 @@ Optional:
 | `centerLat` | `37.6213` | Radar center latitude. Default is near SFO. |
 | `centerLon` | `-122.379` | Radar center longitude. Default is near SFO. |
 | `rangeNm` | `35` | Radar range in nautical miles. |
-| `fetchInterval` | `15000` | Feed refresh interval in milliseconds. Used for local receivers and online sources. |
+| `fetchInterval` | `15000` | Feed refresh interval in milliseconds. Used for local receivers and online sources. Use 180000 ms or higher for free tier Airplanes.live. |
 | `maxSeenSeconds` | `45` | Hide aircraft whose feed-reported position age is older than this many seconds. |
 | `maxAircraft` | `28` | Maximum aircraft to render. |
 | `persistTracks` | `true` | Keep recently seen aircraft on screen briefly when they miss one or two feed updates. |
@@ -268,7 +214,6 @@ Optional:
 
 ## Notes
 
-- The module uses `node_helper.js` so feeds are requested from the MagicMirror backend. That avoids browser CORS issues and keeps display code focused on rendering.
 - A Pi 3 can read and feed ADS-B data, but running MagicMirror and Pi24 on the same board may feel tight. If your mirror is on another device, point `receiverUrl` at the Pi24 receiver across your LAN.
 - Airplanes.live's public REST API currently does not require an account or API key, but its public docs say feeder access could be required in the future and their published API tiers include request limits.
 - The local aircraft database is best-effort metadata. Some military, blocked, temporary, or recently changed aircraft may still show no type.
