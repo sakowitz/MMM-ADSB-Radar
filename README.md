@@ -6,13 +6,29 @@ It is designed for common local receiver feeds such as Flightradar24 Pi24, dump1
 
 ## Install
 
-Copy this folder into your MagicMirror `modules` directory:
+Install this folder into your MagicMirror `modules` directory:
 
 ```bash
 MagicMirror/modules/MMM-ADSB-Radar
 ```
 
-Then add the module to `MagicMirror/config/config.js`.
+Then add a module block to `MagicMirror/config/config.js`.
+
+## Configuration
+
+Configure this module only from MagicMirror's main config file:
+
+```text
+~/MagicMirror/config/config.js
+```
+
+Do not edit tracked files inside `MMM-ADSB-Radar` to set your receiver URL, location, colors, airport list, or other personal settings. The module folder contains code, defaults, documentation, and safe examples only. Your real settings belong in the `config` object inside MagicMirror's `config/config.js`, so future `git pull` updates do not overwrite them.
+
+Safe copy-paste snippets are also available in:
+
+```text
+MMM-ADSB-Radar/examples/config.js
+```
 
 ## Quick Start With Demo Traffic
 
@@ -36,18 +52,12 @@ Then add the module to `MagicMirror/config/config.js`.
   module: "MMM-ADSB-Radar",
   position: "top_right",
   config: {
-    receiverUrl: "http://raspberrypi.local/tar1090/data/aircraft.json",
+    receiverUrl: "http://your-receiver.local/tar1090/data/aircraft.json",
     centerLat: 47.6062,
     centerLon: -122.3321,
     rangeNm: 35,
     demoMode: false,
-    mode: "hybrid",
-    airports: [
-      { code: "KSMF", name: "Sacramento Intl", lat: 38.6954, lon: -121.5908 },
-      { code: "KSAC", name: "Sacramento Exec", lat: 38.5129, lon: -121.4933 },
-      { code: "KMHR", name: "Mather", lat: 38.5553, lon: -121.2972 },
-      { code: "KMCC", name: "McClellan", lat: 38.6676, lon: -121.4006 }
-    ]
+    mode: "hybrid"
   }
 }
 ```
@@ -118,8 +128,8 @@ To use Airplanes.live instead of a local receiver:
   config: {
     source: "online",
     onlineProvider: "airplanesLive",
-    centerLat: 38.6,
-    centerLon: -121.4,
+    centerLat: 47.6062,
+    centerLon: -122.3321,
     rangeNm: 35,
     fetchInterval: 15000,
     demoMode: false,
@@ -138,8 +148,8 @@ To use your receiver first and fall back to Airplanes.live when the receiver is 
     source: "auto",
     receiverUrl: "http://pi24.local:8754/flights.json",
     onlineProvider: "airplanesLive",
-    centerLat: 38.6,
-    centerLon: -121.4,
+    centerLat: 47.6062,
+    centerLon: -122.3321,
     rangeNm: 35,
     fetchInterval: 15000,
     demoMode: false,
