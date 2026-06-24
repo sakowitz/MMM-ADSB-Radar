@@ -13,8 +13,8 @@ const ADSBRadarNotifications = {
 };
 
 const DEFAULT_CENTER = {
-  lat: 39.8283,
-  lon: -98.5795
+  lat: 37.6213,
+  lon: -122.379
 };
 
 module.exports = NodeHelper.create({

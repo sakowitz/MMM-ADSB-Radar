@@ -21,9 +21,9 @@ Module.register("MMM-ADSB-Radar", {
     aircraftDbPath: "aircraft-db",
     aircraftDbChunkLength: 2,
     aircraftDbMaxCachedChunks: 16,
-    centerLat: null,
-    centerLon: null,
-    rangeNm: 30,
+    centerLat: 37.6213,
+    centerLon: -122.379,
+    rangeNm: 35,
     fetchInterval: 15000,
     maxSeenSeconds: 45,
     maxAircraft: 28,
@@ -56,7 +56,11 @@ Module.register("MMM-ADSB-Radar", {
     headingVectorMaxPx: 46,
     headingVectorKtPerPixel: 12,
     showAirports: true,
-    airports: [],
+    airports: [
+      { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
+      { code: "OAK", name: "Oakland Intl", lat: 37.7213, lon: -122.2207 },
+      { code: "SJC", name: "San Jose Intl", lat: 37.3639, lon: -121.9289 }
+    ],
     demoMode: "auto",
     units: "imperial",
     colors: {

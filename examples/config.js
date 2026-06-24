@@ -13,12 +13,7 @@
 const demoTraffic = {
   module: "MMM-ADSB-Radar",
   position: "top_right",
-  config: {
-    centerLat: 39.8283,
-    centerLon: -98.5795,
-    rangeNm: 40,
-    demoMode: true
-  }
+  config: {}
 };
 
 const localReceiver = {
@@ -27,8 +22,8 @@ const localReceiver = {
   config: {
     source: "receiver",
     receiverUrl: "http://your-receiver.local:8754/flights.json",
-    centerLat: 47.6062,
-    centerLon: -122.3321,
+    centerLat: 37.6213,
+    centerLon: -122.379,
     rangeNm: 35,
     demoMode: false,
     mode: "hybrid"
@@ -42,10 +37,10 @@ const receiverWithOnlineFallback = {
     source: "auto",
     receiverUrl: "http://your-receiver.local:8754/flights.json",
     onlineProvider: "airplanesLive",
-    centerLat: 47.6062,
-    centerLon: -122.3321,
+    centerLat: 37.6213,
+    centerLon: -122.379,
     rangeNm: 35,
-    fetchInterval: 15000,
+    fetchInterval: 180000,
     demoMode: false,
     mode: "hybrid"
   }
@@ -57,8 +52,8 @@ const onlineOnly = {
   config: {
     source: "online",
     onlineProvider: "airplanesLive",
-    centerLat: 47.6062,
-    centerLon: -122.3321,
+    centerLat: 37.6213,
+    centerLon: -122.379,
     rangeNm: 35,
     fetchInterval: 15000,
     demoMode: false,
