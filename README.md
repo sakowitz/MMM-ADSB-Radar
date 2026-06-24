@@ -16,16 +16,12 @@ The default view is a demo radar centered on the San Francisco Bay Area, with SF
 
 ## Installation
 
-Install into your MagicMirror `modules` directory. The module directory will be `~/MagicMirror/modules/MMM-ADSB-Radar`.
+Install into your MagicMirror `modules` directory.
 
 ```bash
 cd ~/MagicMirror/modules
 git clone https://github.com/sakowitz/MMM-ADSB-radar.git MMM-ADSB-Radar
 ```
-
-No `npm install` is required for normal use.
-
-Add the module to the `modules` array in `~/MagicMirror/config/config.js`.
 
 ## Update
 
