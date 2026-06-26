@@ -2,7 +2,7 @@
 
 A MagicMirror module for a [Tiny Desk Radar](https://www.gadgies.co.uk/)-style ADS-B viewer. Initially built for use with Flightradar24's Pi24 project to view the live data your receiver is sending. This module can also use live traffic data from Airplanes.live.
 
-The default view is a demo radar centered on the San Francisco Bay Area with SFO, OAK, and SJC airports shown.
+The default view is a 360px demo radar centered on the San Francisco Bay Area with SFO, OAK, and SJC airports shown. It is sized for a MagicMirror sidebar by default, and `radarSize` can be changed from MagicMirror's `config/config.js`.
 
 ## Screenshots
 
@@ -27,6 +27,8 @@ cd ~/MagicMirror/modules
 git clone https://github.com/sakowitz/MMM-ADSB-Radar.git
 ```
 
+No `npm install` step is required for the basic module. The optional local aircraft database uses the script described below.
+
 ## Update
 
 ```bash
@@ -42,31 +44,27 @@ npm run build:aircraft-db
 
 ## Configuration
 
-Add MMM-ADSB-Radar module to the modules array in the config/config.js file.
+Add `MMM-ADSB-Radar` to the `modules` array in MagicMirror's `config/config.js` file.
+
+Keep your real receiver URL, latitude, longitude, airport list, colors, and other personal settings in MagicMirror's `config/config.js`. Do not edit tracked files inside `modules/MMM-ADSB-Radar` for normal setup. That way, a future `git pull` updates the module code without overwriting your settings.
 
 The module demos automatically when no receiver URL is set. Airplanes.live can be used as the primary source or as a fallback when your local receiver is empty or unavailable. See the [Airplanes.live REST API guide](https://airplanes.live/api-guide/) and [API tier page](https://airplanes.live/api/) for current limits and terms.
 
-Default demo example:
+Minimal sidebar example:
 
 ```js
 {
   module: "MMM-ADSB-Radar",
   position: "top_right",
   config: {
-    mode: "hybrid",
-    demoMode: true,
-    centerLat: 37.6213,
-    centerLon: -122.379,
-    rangeNm: 35,
-    showAirports: true,
-    airports: [
-      { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
-      { code: "OAK", name: "Oakland Intl", lat: 37.7213, lon: -122.2207 },
-      { code: "SJC", name: "San Jose Intl", lat: 37.3639, lon: -121.9289 }
-    ]
+    radarSize: 360
   }
 }
 ```
+
+The `config` block above can be omitted entirely if you want the built-in demo defaults.
+
+Additional safe examples are in [examples/config.js](examples/config.js). Copy one example object into the `modules` array in MagicMirror's `config/config.js`, then replace the placeholder receiver URL and coordinates there.
 
 ## Local Receiver Example
 
@@ -151,7 +149,7 @@ https://api.airplanes.live/v2/point/{lat}/{lon}/{radius}
 
 The module fills in `{lat}`, `{lon}`, and `{radius}` from your radar center and range. Radius is capped at 250 nautical miles.
 
-`fetchInterval` is used for every source, including Pi24/local receiver feeds and Airplanes.live. The default is 15000 ms, which is a good local-receiver refresh rate. Their API tier page lists a free pull limit of 500 requests/day; if you run online-only mode all day on the free tier, use 180000 ms or higher.
+`fetchInterval` is used for every source, including Pi24/local receiver feeds and Airplanes.live. The default is 15000 ms, which is a good local-receiver refresh rate. If you run online-only mode all day, check Airplanes.live's published limits and use a conservative interval such as 180000 ms or higher.
 
 ## Local Aircraft Type Database
 
@@ -199,14 +197,14 @@ node scripts/build-aircraft-db.js --source /path/to/aircraftDatabase.csv
 | `animateAircraft` | `true` | Drift targets between feed updates using reported speed and heading. |
 | `aircraftAnimationDurationMs` | `null` | Animation duration. Defaults to `fetchInterval`. |
 | `aircraftAnimationMaxDistanceNm` | `3` | Maximum projected movement per animation cycle. |
-| `mode` | `"hybrid"` | Display mode: `"radar"`, `"list"`, or `"hybrid"`. |
+| `mode` | `"hybrid"` | Display mode: `"radar"`, `"list"`, or `"hybrid"`. In MagicMirror left/right regions, hybrid mode stacks the aircraft list below the radar so the module stays sidebar-friendly. |
 | `title` | `"ADS-B Radar"` | Module header text. |
-| `radarSize` | `360` | Radar diameter in pixels. |
+| `radarSize` | `360` | Radar diameter. Numbers are treated as pixels; CSS lengths such as `"22rem"` also work. |
 | `animationSpeed` | `0` | MagicMirror DOM fade speed in milliseconds. Keep at `0` to avoid blink on refresh. |
 | `showLabels` | `true` | Show callsign/type labels on the scope. |
 | `showStats` | `true` | Show aircraft count, range, and update time. |
 | `showList` | `true` | Show the nearby aircraft list when `mode` is `"hybrid"` or `"list"`. |
-| `listWidth` | `220` | Width of the side list in pixels. |
+| `listWidth` | `220` | Width of the side list. Numbers are treated as pixels; CSS lengths also work. |
 | `listMaxHeight` | `null` | Maximum side-list height. Defaults to the radar diameter. Extra rows are hidden behind a bottom fade. |
 | `showRangeLabels` | `true` | Show range labels at the top of each radar ring. |
 | `rangeLabelCount` | `4` | Number of labeled range rings. |

@@ -3,6 +3,14 @@
   "version": "0.2.0",
   "description": "MagicMirror module for a Tiny Desk Radar-style ADS-B aircraft scope.",
   "main": "MMM-ADSB-Radar.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sakowitz/MMM-ADSB-Radar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sakowitz/MMM-ADSB-Radar/issues"
+  },
+  "homepage": "https://github.com/sakowitz/MMM-ADSB-Radar#readme",
   "scripts": {
     "build:aircraft-db": "node scripts/build-aircraft-db.js",
     "check": "node --check MMM-ADSB-Radar.js && node --check node_helper.js"

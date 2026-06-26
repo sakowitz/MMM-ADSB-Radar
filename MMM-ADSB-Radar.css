@@ -420,6 +420,24 @@
   width: min(430px, 92vw);
 }
 
+.region.left .mmm-adsb-radar,
+.region.right .mmm-adsb-radar {
+  width: min(var(--adsb-size), 100%);
+}
+
+.region.left .mmm-adsb-radar--hybrid .adsb-body,
+.region.right .mmm-adsb-radar--hybrid .adsb-body {
+  display: grid;
+  gap: 10px;
+}
+
+.region.left .mmm-adsb-radar--hybrid .adsb-list,
+.region.right .mmm-adsb-radar--hybrid .adsb-list {
+  max-height: min(var(--adsb-list-max-height), 220px);
+  min-height: 0;
+  width: min(var(--adsb-size), 100%);
+}
+
 @keyframes adsbSweep {
   to {
     transform: rotate(360deg);
@@ -469,7 +487,8 @@
   }
 
   .adsb-list {
-    max-height: 220px;
+    max-height: min(var(--adsb-list-max-height), 220px);
+    min-height: 0;
     width: min(var(--adsb-size), 92vw);
   }
 }

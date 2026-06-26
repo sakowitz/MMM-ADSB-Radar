@@ -10,12 +10,21 @@
  * tracked files inside the module folder for user-specific settings.
  */
 
+const sidebarDemo = {
+  module: "MMM-ADSB-Radar",
+  position: "top_right",
+  config: {
+    radarSize: 360
+  }
+};
+
 const demoTraffic = {
   module: "MMM-ADSB-Radar",
   position: "top_right",
   config: {
     mode: "hybrid",
     demoMode: true,
+    radarSize: 360,
     centerLat: 37.6213,
     centerLon: -122.379,
     rangeNm: 35,
@@ -39,6 +48,7 @@ const localReceiver = {
     rangeNm: 35,
     source: "receiver",
     receiverUrl: "http://your-receiver.local:8754/flights.json",
+    fetchInterval: 15000,
     showAirports: true,
     airports: [
       { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
@@ -81,7 +91,7 @@ const onlineOnly = {
     rangeNm: 35,
     source: "online",
     onlineProvider: "airplanesLive",
-    fetchInterval: 15000,
+    fetchInterval: 180000,
     showAirports: true,
     airports: [
       { code: "SFO", name: "San Francisco Intl", lat: 37.6213, lon: -122.379 },
@@ -95,5 +105,6 @@ module.exports = {
   demoTraffic,
   localReceiver,
   onlineOnly,
-  receiverWithOnlineFallback
+  receiverWithOnlineFallback,
+  sidebarDemo
 };

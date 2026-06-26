@@ -331,8 +331,8 @@ Module.register("MMM-ADSB-Radar", {
     element.style.setProperty("--adsb-text", colors.text || this.defaults.colors.text);
     element.style.setProperty("--adsb-muted", colors.muted || this.defaults.colors.muted);
     element.style.setProperty("--adsb-accent", colors.accent || this.defaults.colors.accent);
-    element.style.setProperty("--adsb-size", `${this.config.radarSize}px`);
-    element.style.setProperty("--adsb-list-width", `${Number(this.config.listWidth) || this.defaults.listWidth}px`);
+    element.style.setProperty("--adsb-size", this.cssLength(this.config.radarSize, this.defaults.radarSize));
+    element.style.setProperty("--adsb-list-width", this.cssLength(this.config.listWidth, this.defaults.listWidth));
     element.style.setProperty("--adsb-list-max-height", this.listMaxHeight());
   },
 
@@ -376,10 +376,6 @@ Module.register("MMM-ADSB-Radar", {
     const sweep = document.createElement("div");
     sweep.className = "adsb-sweep";
     scope.appendChild(sweep);
-
-    this.buildRangeRings().forEach((ring) => {
-      scope.appendChild(ring);
-    });
 
     this.buildRangeRings().forEach((ring) => {
       scope.appendChild(ring);
@@ -673,6 +669,19 @@ Module.register("MMM-ADSB-Radar", {
     }
 
     return String(this.config.listMaxHeight);
+  },
+
+  cssLength: function (value, fallback) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return `${value}px`;
+    }
+
+    const text = String(value || "").trim();
+    if (!text) {
+      return `${fallback}px`;
+    }
+
+    return /^\d+(\.\d+)?$/.test(text) ? `${text}px` : text;
   },
 
   headingVectorLength: function (plane) {

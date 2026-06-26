@@ -191,6 +191,12 @@ module.exports = NodeHelper.create({
   },
 
   shouldUseDemo: function (config) {
+    const mode = this.sourceMode(config);
+
+    if (mode === "demo") {
+      return config.demoMode !== false;
+    }
+
     if (config.demoMode === true) {
       return true;
     }
@@ -199,7 +205,7 @@ module.exports = NodeHelper.create({
       return false;
     }
 
-    return !config.receiverUrl && this.sourceMode(config) === "receiver";
+    return !config.receiverUrl && mode === "receiver";
   },
 
   sourceMode: function (config) {
