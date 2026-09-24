@@ -22,8 +22,10 @@ module.exports = NodeHelper.create({
 
   start: function () {
     this.configs = {};
+    this.configSignatures = {};
     this.fetchTimers = {};
-    this.loading = {};
+    this.aircraftCache = {};
+    this.inFlight = {};
     this.aircraftDbCache = {};
     this.aircraftDbCacheOrder = [];
   },
@@ -34,38 +36,80 @@ module.exports = NodeHelper.create({
     }
 
     if (notification === ADSBRadarNotifications.CONFIG) {
-      this.configs[payload.instanceId] = payload.config || {};
+      this.storeConfig(payload.instanceId, payload.config || {});
       this.scheduleRefresh(payload.instanceId, 250);
       return;
     }
 
     if (notification === ADSBRadarNotifications.REQUEST) {
       if (payload.config) {
-        this.configs[payload.instanceId] = payload.config;
+        this.storeConfig(payload.instanceId, payload.config);
       }
       this.refreshAircraft(payload.instanceId);
     }
+  },
+
+  storeConfig: function (instanceId, config) {
+    const signature = JSON.stringify(config || {});
+    if (this.configSignatures[instanceId] && this.configSignatures[instanceId] !== signature) {
+      delete this.aircraftCache[instanceId];
+    }
+    this.configs[instanceId] = config || {};
+    this.configSignatures[instanceId] = signature;
   },
 
   refreshAircraft: function (instanceId) {
     clearTimeout(this.fetchTimers[instanceId]);
     this.fetchTimers[instanceId] = null;
 
-    if (this.loading[instanceId]) {
-      return;
+    const cached = this.aircraftCache[instanceId];
+    const remaining = this.cacheRemainingMs(instanceId);
+    if (cached && remaining > 0) {
+      this.sendAircraftPayload(instanceId, cached.result, "hit");
+      this.scheduleRefresh(instanceId, remaining);
+      return Promise.resolve(cached.result);
     }
 
-    this.loading[instanceId] = true;
-    this.loadAircraft(instanceId).catch((error) => {
+    if (this.inFlight[instanceId]) {
+      return this.inFlight[instanceId];
+    }
+
+    const request = this.refreshAndCacheAircraft(instanceId, cached);
+    this.inFlight[instanceId] = request;
+    return request;
+  },
+
+  refreshAndCacheAircraft: async function (instanceId, cached) {
+    try {
+      const result = await this.loadAircraft(instanceId);
+      this.aircraftCache[instanceId] = {
+        fetchedAt: Date.now(),
+        result
+      };
+      this.sendAircraftPayload(instanceId, result, "fresh");
+      Log.info(`${this.name}: shared receiver cache refreshed`);
+      return result;
+    } catch (error) {
       Log.error(`${this.name}: ${error.message}`);
+      if (cached) {
+        this.sendAircraftPayload(instanceId, Object.assign({}, cached.result, {
+          status: "Showing last radar update",
+          stats: Object.assign({}, cached.result.stats, {
+            receiverError: error.message
+          })
+        }), "stale");
+        return cached.result;
+      }
+
       this.sendSocketNotification(ADSBRadarNotifications.ERROR, {
         instanceId,
         message: error.message
       });
-    }).finally(() => {
-      this.loading[instanceId] = false;
+      return null;
+    } finally {
+      delete this.inFlight[instanceId];
       this.scheduleRefresh(instanceId);
-    });
+    }
   },
 
   scheduleRefresh: function (instanceId, delay) {
@@ -80,6 +124,14 @@ module.exports = NodeHelper.create({
     return Math.max(1000, Number(config.fetchInterval) || 15000);
   },
 
+  cacheRemainingMs: function (instanceId) {
+    const cached = this.aircraftCache[instanceId];
+    if (!cached) {
+      return 0;
+    }
+    return Math.max(0, this.fetchIntervalMs(instanceId) - (Date.now() - cached.fetchedAt));
+  },
+
   loadAircraft: async function (instanceId) {
     const config = this.configs[instanceId] || {};
     const demo = this.shouldUseDemo(config);
@@ -90,35 +142,32 @@ module.exports = NodeHelper.create({
     }
 
     if (demo) {
-      this.sendAircraftResult(instanceId, {
+      return this.makeAircraftResult({
         feed: this.makeDemoFeed(config, center),
         status: "Demo traffic",
         source: "demo"
       }, config, center);
-      return;
     }
 
     if (this.sourceMode(config) === "auto") {
-      await this.loadAutoAircraft(instanceId, config, center);
-      return;
+      return this.loadAutoAircraft(config, center);
     }
 
     const result = this.sourceMode(config) === "online" ?
       await this.loadOnlineFeed(config, center) :
       await this.loadReceiverFeed(config);
 
-    this.sendAircraftResult(instanceId, result, config, center);
+    return this.makeAircraftResult(result, config, center);
   },
 
-  sendAircraftResult: function (instanceId, result, config, center, extraStats = {}) {
+  makeAircraftResult: function (result, config, center, extraStats = {}) {
     const feed = result.feed || {};
     const feedAircraft = this.extractAircraft(feed);
     const normalized = this.normalizeAircraft(feedAircraft, config, center);
     const enriched = this.enrichAircraft(normalized, config);
     const aircraft = this.filterAircraft(enriched, config);
 
-    this.sendSocketNotification(ADSBRadarNotifications.UPDATE, {
-      instanceId,
+    return {
       status: result.status,
       aircraft: aircraft.slice(0, config.maxAircraft || 28),
       stats: {
@@ -133,10 +182,17 @@ module.exports = NodeHelper.create({
         receiverError: extraStats.receiverError || null,
         onlineError: extraStats.onlineError || null
       }
-    });
+    };
   },
 
-  loadAutoAircraft: async function (instanceId, config, center) {
+  sendAircraftPayload: function (instanceId, result, cacheStatus) {
+    this.sendSocketNotification(ADSBRadarNotifications.UPDATE, Object.assign({}, result, {
+      instanceId,
+      cacheStatus
+    }));
+  },
+
+  loadAutoAircraft: async function (config, center) {
     let receiverResult = null;
     let receiverPayload = null;
     let receiverError = null;
@@ -147,8 +203,7 @@ module.exports = NodeHelper.create({
         receiverPayload = this.buildAircraftPayload(receiverResult, config, center);
 
         if (receiverPayload.aircraft.length > 0) {
-          this.sendAircraftResult(instanceId, receiverResult, config, center);
-          return;
+          return this.makeAircraftResult(receiverResult, config, center);
         }
       } catch (error) {
         receiverError = error;
@@ -157,7 +212,7 @@ module.exports = NodeHelper.create({
 
     try {
       const onlineResult = await this.loadOnlineFeed(config, center);
-      this.sendAircraftResult(instanceId, {
+      return this.makeAircraftResult({
         feed: onlineResult.feed,
         status: receiverResult ? "Online fallback" : onlineResult.status,
         source: onlineResult.source,
@@ -166,13 +221,11 @@ module.exports = NodeHelper.create({
       }, config, center, {
         receiverError: receiverError ? receiverError.message : null
       });
-      return;
     } catch (onlineError) {
       if (receiverResult && receiverPayload) {
-        this.sendAircraftResult(instanceId, receiverResult, config, center, {
+        return this.makeAircraftResult(receiverResult, config, center, {
           onlineError: onlineError.message
         });
-        return;
       }
 
       throw receiverError || onlineError;

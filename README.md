@@ -1,5 +1,12 @@
 # MMM-ADSB-Radar
 
+Aircraft data is polled and cached by the MagicMirror node helper. Multiple
+dashboard browsers share one receiver request per `fetchInterval` instead of
+polling the ADS-B receiver independently. A newly opened display receives the
+current cached snapshot immediately, and the last successful snapshot remains
+available during a temporary receiver failure. The in-memory cache resets when
+MagicMirror restarts.
+
 A MagicMirror module for a [Tiny Desk Radar](https://www.gadgies.co.uk/)-style ADS-B viewer. Initially built for use with Flightradar24's Pi24 project to view the live data your receiver is sending. This module can also use live traffic data from Airplanes.live.
 
 The default view is a 360px demo radar centered on the San Francisco Bay Area with SFO, OAK, and SJC airports shown. It is sized for a MagicMirror sidebar by default, and `radarSize` can be changed from MagicMirror's `config/config.js`.

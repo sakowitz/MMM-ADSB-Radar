@@ -85,12 +85,10 @@ Module.register("MMM-ADSB-Radar", {
     this.status = "Starting radar";
     this.error = null;
     this.lastUpdated = null;
-    this.fetchTimer = null;
     this.trails = {};
     this.trackedAircraft = {};
 
     this.sendConfig();
-    this.scheduleFetch(100);
   },
 
   getStyles: function () {
@@ -101,14 +99,8 @@ Module.register("MMM-ADSB-Radar", {
     return this.config.title || this.data.header;
   },
 
-  suspend: function () {
-    clearTimeout(this.fetchTimer);
-    this.fetchTimer = null;
-  },
-
   resume: function () {
     this.sendConfig();
-    this.scheduleFetch(100);
   },
 
   sendConfig: function () {
@@ -116,17 +108,6 @@ Module.register("MMM-ADSB-Radar", {
       instanceId: this.instanceId,
       config: this.config
     });
-  },
-
-  scheduleFetch: function (delay) {
-    clearTimeout(this.fetchTimer);
-    this.fetchTimer = setTimeout(() => {
-      this.sendSocketNotification(ADSBRadarNotifications.REQUEST, {
-        instanceId: this.instanceId,
-        config: this.config
-      });
-      this.scheduleFetch();
-    }, typeof delay === "number" ? delay : this.fetchIntervalMs());
   },
 
   socketNotificationReceived: function (notification, payload) {
